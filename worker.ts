@@ -89,11 +89,14 @@ export type AppContext = { Bindings: Env }
 const app = new Hono<AppContext>()
 app.use('*', async (c, next) => {
   await next()
-  c.res.headers.set('X-Content-Type-Options', 'nosniff')
-  c.res.headers.set('Referrer-Policy', 'no-referrer')
-  c.res.headers.set('X-Frame-Options', 'DENY')
-  c.res.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
-  c.res.headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+  if (c.req.header('Upgrade') === 'websocket') return
+  const response = new Response(c.res.body, c.res)
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'no-referrer')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
+  response.headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+  c.res = response
 })
 // A Durable Object exists only once something fetches it, and the CronRoom
 // arms its alarm in that first fetch — so wake it from the request path, or a
