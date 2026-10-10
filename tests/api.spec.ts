@@ -1,18 +1,17 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-test.describe('API tests', () => {
-  test('auth proxy forwards to auth worker', async ({ request }) => {
-    const res = await request.get('/api/auth/ok')
-    expect(res.ok()).toBeTruthy()
+test.describe('session API', () => {
+  test('health endpoint is available and browser auth is removed', async ({ request }) => {
+    expect((await request.get('/api/session/health')).ok()).toBeTruthy()
+    expect((await request.get('/api/auth/ok')).status()).toBe(404)
   })
 
-  test('WebSocket endpoint exists', async ({ page }) => {
-    // /home is a dynamic page (under src/pages/(app)/), so mounting it boots
-    // the providers and auto-connects the records WebSocket. The static
-    // landing at '/' deliberately does neither — see smoke.spec.ts.
-    await page.goto('/home')
-    // Wait for the app to connect its WebSocket (it auto-connects on mount)
-    await page.waitForSelector('[data-testid="app-navigation"]', { timeout: 15000 })
-    // If the app loaded and connected, the WS endpoint works
+  test('creates a private session cookie', async ({ page }) => {
+    await page.goto('/new')
+    await expect(page.getByTestId('app-navigation')).toBeVisible()
+    await expect.poll(async () => (await page.context().cookies()).some((cookie) => cookie.name === '__Host-hand-session')).toBeTruthy()
+    const cookie = (await page.context().cookies()).find((item) => item.name === '__Host-hand-session')
+    expect(cookie?.httpOnly).toBeTruthy()
+    expect(cookie?.sameSite).toBe('Strict')
   })
 })

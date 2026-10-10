@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
-import type { RecordData } from 'deepspace'
 import { ArrowUpRight, FileText } from 'lucide-react'
 import { Badge } from './ui'
-import type { AnalysisRecord } from '../domain/types'
+import type { AnalysisRecord, SessionAnalysisRecord } from '../domain/types'
 import { getComparison } from '../domain/record'
 
 const statusLabel: Record<AnalysisRecord['status'], string> = {
@@ -12,7 +11,7 @@ const statusLabel: Record<AnalysisRecord['status'], string> = {
   failed: 'Failed',
 }
 
-export function AnalysisRow({ record }: { record: RecordData<AnalysisRecord> }) {
+export function AnalysisRow({ record }: { record: SessionAnalysisRecord }) {
   let score: number | null = null
   try { score = getComparison(record.data)?.score?.overall ?? null } catch { /* malformed legacy record */ }
   return (

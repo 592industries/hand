@@ -8,7 +8,6 @@ H.A.N.D. requires **no manually supplied provider API keys**. Anthropic access a
 |---|---:|---|---|
 | `DEEPSPACE_APP_ID` | Yes | `wrangler.toml` via `npx deepspace app init` | Immutable app/data identity. Never invent or hand-edit this value. |
 | `APP_NAME` | Yes | `wrangler.toml` | App subdomain/display routing name (`hand`). |
-| `NATIVE_AUTH_REDIRECT_URIS` | No | `wrangler.toml` | Empty for this web-only build; only set for a future native client. |
 
 No entry needs to be added manually to DeepSpace Secrets/Variables for the current application.
 
@@ -34,20 +33,16 @@ Do not create or copy these yourself. They are platform bindings or credentials 
 |---|---|
 | `OWNER_USER_ID` | Canonical app owner and admin identity. |
 | `APP_OWNER_JWT` | Server-side owner credential used by developer-billed platform calls. Never expose to the browser. |
-| `APP_IDENTITY_TOKEN` | App HMAC identity used by the private file gateway and AI proxy. |
-| `AUTH_JWT_PUBLIC_KEY` | Verifies caller JWTs. |
-| `AUTH_JWT_ISSUER` | Expected JWT issuer. |
-| `AUTH_WORKER_URL` | DeepSpace authentication service route. |
-| `API_WORKER` / `API_WORKER_URL` | DeepSpace integrations and AI proxy transport (binding in production, URL fallback in development). |
-| `PLATFORM_WORKER` / `PLATFORM_WORKER_URL` | DeepSpace file/platform transport (binding in production, URL fallback in development). |
+| `APP_IDENTITY_TOKEN` | App HMAC identity used by the DeepSpace AI proxy. |
+| `API_WORKER` / `API_WORKER_URL` | DeepSpace AI proxy transport (binding in production, URL fallback in development). |
 | `ASSETS` | Worker static-assets binding. |
-| `RECORD_ROOMS` | SQLite-backed record Durable Object binding. |
+| `SESSION_ROOMS` | SQLite-backed, isolated anonymous session storage with automatic expiry. |
+| `RECORD_ROOMS` | Legacy scaffold binding retained for migration compatibility; the public app does not use it. |
 | `YJS_ROOMS` | DeepSpace Yjs Durable Object binding retained by the standard scaffold. |
 | `CANVAS_ROOMS` | DeepSpace canvas Durable Object binding retained by the standard scaffold. |
 | `PRESENCE_ROOMS` | DeepSpace presence Durable Object binding retained by the standard scaffold. |
 | `CRON_ROOMS` | DeepSpace cron Durable Object binding retained by the standard scaffold. |
 | `JOB_ROOMS` | DeepSpace durable job binding available for future long-running migrations. |
-| `ALLOW_DEBUG_ROUTES` | Development/test-only flag set by DeepSpace; production debug routes remain disabled. |
 
 ## Tooling-only overrides
 

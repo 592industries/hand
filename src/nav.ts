@@ -6,12 +6,9 @@
  * appears in the navigation bar.
  */
 
-import type { Role } from './constants'
-
 export interface NavItem {
   path: string
   label: string
-  roles?: Role[]
   devOnly?: boolean
 }
 
@@ -20,7 +17,4 @@ export const nav: NavItem[] = [
   { path: '/new', label: 'New analysis' },
   { path: '/library', label: 'Library' },
   { path: '/settings', label: 'Settings' },
-  // The /api-status debug page still exists — add
-  // `{ path: '/api-status', label: 'API Status', devOnly: true }` to surface it.
-  // ── Features add nav items below this line ──
 ]

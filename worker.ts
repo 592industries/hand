@@ -6,7 +6,6 @@
  */
 
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import {
   armCronRoom,
   CanvasRoom,
@@ -14,25 +13,16 @@ import {
   JobRoom,
   PresenceRoom,
   RecordRoom,
-  resolveAppRole,
   workerErrorHandler,
   YjsRoom,
 } from 'deepspace/worker'
 import type { DOBindings, DOManifest, Job, JobContext } from 'deepspace/worker'
-import { AI_CHATS_SCHEMA } from 'deepspace/schema'
-import { registerAgent } from './src/ai/agent.js'
-import { buildTools } from './src/ai/tools.js'
 import { tasks as cronTasks, runTask as runCronTask } from './src/cron.js'
 import { runJob } from './src/jobs.js'
 import { schemas } from './src/schemas.js'
-import { registerActionRoutes } from './src/server/action-routes.js'
-import {
-  registerAuthAndIntegrationRoutes,
-  registerPlatformProxyRoutes,
-  registerStaticRoutes,
-  resolveAuth,
-} from './src/server/http-routes.js'
-import { registerRealtimeRoutes } from './src/server/realtime-routes.js'
+import { registerStaticRoutes } from './src/server/http-routes.js'
+import { registerSessionRoutes } from './src/server/session-routes.js'
+export { HandSessionRoom } from './src/server/session-room.js'
 
 // Dynamic deploy reads this manifest to create the app's DO bindings.
 export const __DO_MANIFEST__ = [
@@ -42,6 +32,7 @@ export const __DO_MANIFEST__ = [
   { binding: 'PRESENCE_ROOMS', className: 'AppPresenceRoom', sqlite: true },
   { binding: 'CRON_ROOMS', className: 'AppCronRoom', sqlite: true },
   { binding: 'JOB_ROOMS', className: 'AppJobRoom', sqlite: true },
+  { binding: 'SESSION_ROOMS', className: 'HandSessionRoom', sqlite: true },
 ] as const satisfies DOManifest
 
 export class AppRecordRoom extends RecordRoom<Env> {
@@ -69,11 +60,7 @@ export class AppCronRoom extends CronRoom<Env> {
 export class AppJobRoom extends JobRoom<Env> {
   constructor(state: DurableObjectState, env: Env) {
     super(state, env, {
-      authorizeWrite: async (user) => {
-        if (user.userId.startsWith('anon-')) return false
-        const role = await resolveAppRole(env, user.userId)
-        return role === 'member' || role === 'admin'
-      },
+      authorizeWrite: async () => false,
     })
   }
 
@@ -84,46 +71,30 @@ export class AppJobRoom extends JobRoom<Env> {
 
 export interface Env extends DOBindings<typeof __DO_MANIFEST__> {
   ASSETS: Fetcher
-  /**
-   * Platform service binding in production; deepspace dev supplies the URL
-   * fallback. Standard app files use the platform's shared, app-scoped R2
-   * bucket rather than a local binding.
-   */
-  PLATFORM_WORKER?: Fetcher
-  PLATFORM_WORKER_URL?: string
-  /**
-   * HMAC app credential minted on first deploy. Proxy routes omit identity
-   * headers when it is absent so upstream services fail closed.
-   */
+  /** HMAC app credential minted on first deploy for platform services. */
   APP_IDENTITY_TOKEN?: string
-  /** API service binding in production with a deepspace-dev URL fallback. */
+  /** AI service binding in production with a local-development fallback. */
   API_WORKER?: Fetcher
   API_WORKER_URL?: string
-  AUTH_JWT_PUBLIC_KEY: string
-  AUTH_JWT_ISSUER: string
-  AUTH_WORKER_URL: string
-  /** Comma-separated exact Expo/native callback URIs (for example, myapp://auth/callback). */
-  NATIVE_AUTH_REDIRECT_URIS?: string
   APP_NAME: string
   /** Immutable record-scope and platform identity. */
   DEEPSPACE_APP_ID: string
   OWNER_USER_ID: string
-  /**
-   * Long-lived owner JWT used for developer-billed server calls. User-billed
-   * calls always forward the signed-in caller's JWT instead.
-   */
+  /** Server-only credential used for developer-billed AI calls. */
   APP_OWNER_JWT: string
-  /**
-   * Enables /api/debug/* only when exactly "true". The route still requires
-   * an authenticated app owner/admin. deepspace dev/test set it locally.
-   */
-  ALLOW_DEBUG_ROUTES?: string
 }
 
 export type AppContext = { Bindings: Env }
 
 const app = new Hono<AppContext>()
-app.use('/api/*', cors())
+app.use('*', async (c, next) => {
+  await next()
+  c.res.headers.set('X-Content-Type-Options', 'nosniff')
+  c.res.headers.set('Referrer-Policy', 'no-referrer')
+  c.res.headers.set('X-Frame-Options', 'DENY')
+  c.res.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()')
+  c.res.headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+})
 // A Durable Object exists only once something fetches it, and the CronRoom
 // arms its alarm in that first fetch — so wake it from the request path, or a
 // deployed schedule waits for a visitor. Once per isolate; no-op without tasks.
@@ -132,18 +103,9 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Registration order is part of the worker contract. The wildcard auth route
-// follows its special cases, AI precedes platform proxies, and static is last.
-registerAuthAndIntegrationRoutes(app)
-registerRealtimeRoutes(app)
-registerActionRoutes(app, resolveAuth)
-// The in-app assistant stores chat history in `ai-chats` / `ai-messages`,
-// which only the copilot overlay declares. When present, registerAgent enables
-// both that website AI and the user's local Codex/Claude/etc. assistant.
-if (schemas.some((schema) => schema.name === AI_CHATS_SCHEMA.name)) {
-  registerAgent(app, { tools: buildTools })
-}
-registerPlatformProxyRoutes(app)
+// The public app exposes only its opaque, cookie-bound ephemeral session API.
+// No browser auth, records socket, integration proxy, or generic AI route is mounted.
+registerSessionRoutes(app)
 registerStaticRoutes(app)
 
 // Hono registers ONE error handler (last onError wins), and its default is

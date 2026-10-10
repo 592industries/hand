@@ -1,38 +1,38 @@
 import { z } from 'zod'
 
 export const uncertaintySchema = z.object({
-  text: z.string(),
-  reason: z.string(),
-  alternatives: z.array(z.string()).default([]),
+  text: z.string().max(2_000),
+  reason: z.string().max(2_000),
+  alternatives: z.array(z.string().max(1_000)).max(10).default([]),
   imageIndex: z.number().int().min(0).optional(),
-  region: z.string().optional(),
+  region: z.string().max(500).optional(),
 })
 
 export const equationSchema = z.object({
-  raw: z.string(),
-  latex: z.string(),
-  interpretation: z.string().optional(),
+  raw: z.string().max(4_000),
+  latex: z.string().max(4_000),
+  interpretation: z.string().max(4_000).optional(),
   uncertain: z.boolean().default(false),
 })
 
 export const transcriptionSchema = z.object({
-  fullText: z.string(),
-  sections: z.array(z.object({ heading: z.string(), content: z.string() })),
-  equations: z.array(equationSchema),
-  keyConcepts: z.array(z.string()),
-  summary: z.string(),
-  suggestedSubject: z.string(),
-  suggestedTopic: z.string(),
-  suggestedTags: z.array(z.string()),
-  uncertainties: z.array(uncertaintySchema),
+  fullText: z.string().max(250_000),
+  sections: z.array(z.object({ heading: z.string().max(500), content: z.string().max(30_000) })).max(100),
+  equations: z.array(equationSchema).max(100),
+  keyConcepts: z.array(z.string().max(1_000)).max(100),
+  summary: z.string().max(20_000),
+  suggestedSubject: z.string().max(100),
+  suggestedTopic: z.string().max(140),
+  suggestedTags: z.array(z.string().max(100)).max(30),
+  uncertainties: z.array(uncertaintySchema).max(100),
   legibility: z.enum(['high', 'medium', 'low']),
 })
 
 export const evidenceFindingSchema = z.object({
-  claim: z.string(),
-  referenceEvidence: z.string(),
-  notesEvidence: z.string().optional(),
-  explanation: z.string(),
+  claim: z.string().max(4_000),
+  referenceEvidence: z.string().max(4_000),
+  notesEvidence: z.string().max(4_000).optional(),
+  explanation: z.string().max(8_000),
 })
 
 export const comparisonCandidateSchema = z.object({
@@ -42,13 +42,13 @@ export const comparisonCandidateSchema = z.object({
   agreementScore: z.number().min(0).max(100).optional(),
   technicalScore: z.number().min(0).max(100).optional(),
   technicalApplicable: z.boolean(),
-  omissions: z.array(evidenceFindingSchema),
-  discrepancies: z.array(evidenceFindingSchema),
-  unsupportedAdditions: z.array(evidenceFindingSchema),
-  correctConcepts: z.array(evidenceFindingSchema),
-  uncertainComparisons: z.array(evidenceFindingSchema),
-  explanation: z.string(),
-  suggestedCorrections: z.array(z.string()),
+  omissions: z.array(evidenceFindingSchema).max(100),
+  discrepancies: z.array(evidenceFindingSchema).max(100),
+  unsupportedAdditions: z.array(evidenceFindingSchema).max(100),
+  correctConcepts: z.array(evidenceFindingSchema).max(100),
+  uncertainComparisons: z.array(evidenceFindingSchema).max(100),
+  explanation: z.string().max(20_000),
+  suggestedCorrections: z.array(z.string().max(4_000)).max(100),
 })
 
 export const scoreBreakdownSchema = z.object({
@@ -110,6 +110,13 @@ export type ScoreBreakdown = z.infer<typeof scoreBreakdownSchema>
 export type ImageFile = z.infer<typeof imageFileSchema>
 export type AnalysisRecord = z.infer<typeof analysisRecordSchema>
 export type AnalysisStatus = z.infer<typeof analysisStatusSchema>
+
+export interface SessionAnalysisRecord {
+  recordId: string
+  createdAt: string
+  updatedAt: string
+  data: AnalysisRecord
+}
 
 export const EMPTY_TRANSCRIPTION: Transcription = {
   fullText: '',

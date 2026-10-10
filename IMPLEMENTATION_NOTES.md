@@ -1,27 +1,14 @@
-# Phase 0 capability note
+# H.A.N.D. v0.9 architecture
 
-Verified against the official DeepSpace documentation, CLI, and installed `deepspace@0.39.3` declarations on 2026-10-09.
+H.A.N.D. is public and account-free. The browser receives a random opaque cookie; no name,
+email, account, or recoverable identity is created.
 
-## Capability matrix
+Each cookie maps to one SQLite-backed `HandSessionRoom`. The room stores validated image chunks,
+analysis results, and a small recent-work index. A hibernatable WebSocket represents the active
+browser connection. When the final connection closes, a Durable Object alarm removes all room
+storage after 30 minutes. Settings also exposes immediate deletion.
 
-| Area | Directly supported by DeepSpace | H.A.N.D. application logic | Unsupported / bounded |
-|---|---|---|---|
-| App/runtime | Vite + React + Hono worker scaffold and `app.space` deployment | Routes and interface | Deployment requires owner login/authorization |
-| Identity | OAuth, verified JWT, owner/member/admin roles | Protected routes and action ownership checks | None identified |
-| Records | SQLite-backed `RecordRoom`, schemas, queries, live sync, RBAC | Versioned `analyses` record and serialization | No server full-text search; local bounded search used |
-| Files | Private per-user managed R2, authenticated render/read/delete | Validation, metadata, lifecycle cleanup | Local file upload returns 401 until deployment identity exists |
-| AI | `createDeepSpaceAI`, Anthropic/OpenAI/Cerebras model proxy, Vercel AI SDK | Prompts, image parts, Zod schemas, retry bound | Catalog `openai/chat-completion` only accepts strings and was not used for vision |
-| Background work | Durable `JobRoom` and progress hooks | Current request-bound orchestration | Not needed at current 14 MB cap; available if latency grows |
-| Secrets | Remote DeepSpace secrets store and injected platform credentials | No custom secret required | Provider keys are intentionally unavailable to browser/app source |
-| Search | Structured query/filter/sort/limits | Authorized client-side text matching | Bounded to 500 recent records |
-
-## Model and validation
-
-`claude-sonnet-5` is selected through DeepSpace's Anthropic proxy. The installed AI SDK accepts binary image content in user messages. The model produces runtime-validated Zod objects; application code rejects invalid score ranges and missing discrepancy evidence. One bounded SDK retry is allowed.
-
-The reference is placed inside explicit evidence delimiters and the system prompt states that uploaded text is untrusted evidence, not instructions.
-
-## Persistence and access
-
-The `analyses` collection grants members create access and owner-only read/update/delete access. Admins can operate all records. Image objects use `useR2Files()` default `self` scope. The platform derives app/user prefixes server-side; no R2 credential or permanent public URL is exposed.
-
+The worker exposes only the session API and static assets. Mutations require same-origin browser
+requests. The AI path additionally enforces a 20 MB request ceiling, image signatures and
+dimensions, bounded Zod input/output schemas, six calls per ten minutes, a 20-analysis session
+cap, and idempotency keys. DeepSpace owner credentials remain server-only.

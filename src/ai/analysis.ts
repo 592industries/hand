@@ -51,6 +51,7 @@ export async function transcribeImages(
       description: 'Faithful structured transcription of handwritten academic notes',
       schema: transcriptionSchema,
     }),
+    maxOutputTokens: 12_000,
     maxRetries: 1,
     timeout: 120_000,
   })
@@ -99,6 +100,7 @@ quote or narrowly paraphrase supporting reference evidence. Move weak claims to 
       description: 'Evidence-backed semantic comparison with candidate dimension scores',
       schema: comparisonCandidateSchema,
     }),
+    maxOutputTokens: 12_000,
     maxRetries: 1,
     timeout: 120_000,
   })

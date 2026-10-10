@@ -29,13 +29,14 @@ run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*", 
 [vars]
 DEEPSPACE_APP_ID = "app_01M4J01VV9CEDWVHS6NCP7PDHS"
 APP_NAME = "hand"
-# Exact comma-separated native callback URIs. Set this before deploying an
-# Expo client, for example: "myapp://auth/callback".
-NATIVE_AUTH_REDIRECT_URIS = ""
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["AppRecordRoom", "AppYjsRoom", "AppCanvasRoom", "AppPresenceRoom", "AppCronRoom", "AppJobRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["HandSessionRoom"]
 
 [durable_objects]
 bindings = [
@@ -45,6 +46,7 @@ bindings = [
   { name = "PRESENCE_ROOMS", class_name = "AppPresenceRoom" },
   { name = "CRON_ROOMS", class_name = "AppCronRoom" },
   { name = "JOB_ROOMS", class_name = "AppJobRoom" },
+  { name = "SESSION_ROOMS", class_name = "HandSessionRoom" },
 ]
 
 # For per-app resources (D1, KV, Vectorize, R2, Queues, AI Search), set the id

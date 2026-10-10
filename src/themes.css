@@ -70,3 +70,29 @@
   --color-shell-panel: #fffdf8;
   --radius: 0.75rem;
 }
+
+[data-theme="hand-ink"] {
+  color-scheme: dark;
+  --color-background: #0d1714;
+  --color-foreground: #edf6f1;
+  --color-card: #14231e;
+  --color-card-foreground: #edf6f1;
+  --color-popover: #14231e;
+  --color-popover-foreground: #edf6f1;
+  --color-primary: #59d0a6;
+  --color-primary-foreground: #07120e;
+  --color-secondary: #1b3028;
+  --color-secondary-foreground: #edf6f1;
+  --color-muted: #1b3028;
+  --color-muted-foreground: #9bb3a9;
+  --color-accent: #244238;
+  --color-accent-foreground: #edf6f1;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #170707;
+  --color-border: #2b453b;
+  --color-input: #355247;
+  --color-ring: #59d0a6;
+  --color-shell: #09110e;
+  --color-shell-panel: #14231e;
+  --radius: 0.75rem;
+}
