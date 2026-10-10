@@ -12,6 +12,21 @@ H.A.N.D. requires **no manually supplied provider API keys**. Anthropic access a
 
 No entry needs to be added manually to DeepSpace Secrets/Variables for the current application.
 
+## GitHub Actions deployment credentials
+
+The deployment workflow authenticates the DeepSpace CLI non-interactively. Add these as
+**GitHub repository secrets** (Settings → Secrets and variables → Actions → Secrets), not as
+DeepSpace application variables and not as plain GitHub variables:
+
+| Name | Required | Purpose |
+|---|---:|---|
+| `DEEPSPACE_EMAIL` | Yes | Email for the DeepSpace account that owns or can deploy H.A.N.D. |
+| `DEEPSPACE_PASSWORD` | Yes | Password for that DeepSpace account. Keep this secret and rotate it if exposed. |
+
+The workflow validates both names before attempting a deployment. GitHub masks secret values
+in logs; the CLI reads them from its documented environment variables, so neither value is
+placed on the command line.
+
 ## Values DeepSpace injects automatically
 
 Do not create or copy these yourself. They are platform bindings or credentials minted by DeepSpace during development/deployment.

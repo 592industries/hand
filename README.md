@@ -48,7 +48,12 @@ Paid AI calls are not required by unit tests. Full end-to-end AI verification re
 
 ## Deployment
 
-Deployment changes external state and may use account resources, so run it only after review:
+Pushes to `main` are verified and deployed by GitHub Actions. Configure the two GitHub
+repository secrets documented in [ENVIRONMENT.md](./ENVIRONMENT.md), then push normally.
+The workflow installs Chromium's Linux system libraries before running the complete DeepSpace
+test suite, preventing browser tests from failing on GitHub's clean Ubuntu runners.
+
+For an intentional manual deployment from a trusted workstation:
 
 ```bash
 npx deepspace auth whoami
@@ -66,5 +71,6 @@ Records are stored in the per-app SQLite-backed `RecordRoom` and persist across 
 - Library search is client-side across the 500 most recently updated authorized records because DeepSpace records do not provide a server full-text index.
 - Full private-file upload cannot be exercised under local development before the first deploy; this is a documented platform limitation.
 - The app uses request-bound analysis. The upload cap keeps the JSON action body below the platform request limit. A job-room migration is appropriate if future model latency exceeds request execution limits.
-- No production deployment or paid model evaluation is performed automatically.
+- Production deployment is performed automatically only after the `main` workflow's checks pass;
+  paid model evaluation is not part of the automated test suite.
 

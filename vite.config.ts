@@ -10,6 +10,38 @@ import { prerender } from './prerender.ts'
 const appDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
+  build: {
+    // Keep third-party libraries out of the application entry chunk. Besides
+    // eliminating Vite's 500 kB warning, this gives browsers a stable vendor
+    // asset to cache independently from H.A.N.D. releases.
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react-vendor',
+              test: /node_modules[\\/](?:react|react-dom|react-router|react-router-dom|scheduler)[\\/]/,
+              priority: 30,
+            },
+            {
+              name: 'deepspace-vendor',
+              test: /node_modules[\\/](?:deepspace|ai|zod|yjs|lib0)[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'ui-vendor',
+              test: /node_modules[\\/](?:@base-ui|lucide-react)[\\/]/,
+              priority: 10,
+            },
+            {
+              name: 'vendor',
+              test: /node_modules[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     generouted(),
