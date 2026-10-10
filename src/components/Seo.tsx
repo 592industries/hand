@@ -5,8 +5,8 @@ import type { ReactElement } from 'react'
  * link previews read.
  *
  * Lives in the app, not the SDK, on purpose: importing anything from the
- * `deepspace` root pulls the SDK's client chunk (auth client and all) into the
- * landing page's bundle, and the static front door should stay light.
+ * `deepspace` root pulls the SDK's full client chunk into the landing page's
+ * bundle, and the static front door should stay light.
  *
  * `origin` and `path` together make the canonical URL
  * (`https://my-app.app.space/about`); a root-relative `ogImage` is resolved

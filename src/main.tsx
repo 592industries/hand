@@ -1,5 +1,5 @@
 import { createRoot, hydrateRoot } from 'react-dom/client'
-// Route-based code splitting keeps authenticated/collaborative pages out of
+// Route-based code splitting keeps interactive workspace pages out of
 // the initial bundle for a public top-level route such as `/`.
 import { routes } from '@generouted/react-router/lazy'
 import { createBrowserRouter, RouterProvider } from 'react-router'

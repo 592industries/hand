@@ -24,11 +24,10 @@ export default defineConfig({
   webServer: {
     command: `npx vite --port ${PORT} --strictPort --host`,
     cwd: '..',
-    // Readiness gates on the auth plane, not just vite: /api/auth/ok only
-    // answers once workerd behind /api/* has booted, so no test starts
+    // Readiness gates on the session API, not just vite, so no test starts
     // against a half-up server. Playwright keeps polling through non-OK
     // responses and fails setup with its own clear error at the timeout.
-    url: `${BASE_URL}/api/auth/ok`,
+    url: `${BASE_URL}/api/session/health`,
     reuseExistingServer: false,
     timeout: 60_000,
     stdout: 'pipe',

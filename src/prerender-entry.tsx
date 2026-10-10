@@ -5,7 +5,7 @@
  * PAGES lists the public pages — the ones at the top level of src/pages/ that
  * render with no DeepSpace providers. Add a page here when you add one, and it
  * is prerendered to static HTML and listed in sitemap.xml. Pages under
- * src/pages/(app)/ mount auth and realtime and cannot be prerendered.
+ * src/pages/(app)/ open an ephemeral session and cannot be prerendered.
  *
  * The tree below must mirror what generouted renders on the client for these
  * routes, or hydration mismatches: root route = _app's default export, then a

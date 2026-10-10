@@ -5,11 +5,10 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 ## Architecture
 
 - **Runtime and hosting:** DeepSpace 0.39.3, Vite, React 19, Hono, Cloudflare Worker.
-- **Authentication:** DeepSpace OAuth and verified JWTs.
-- **Records:** DeepSpace `RecordRoom` Durable Object with SQLite storage and owner-scoped RBAC.
-- **Files:** private per-user DeepSpace R2 through `useR2Files`.
-- **AI:** `createDeepSpaceAI` with Anthropic `claude-sonnet-5`; image parts and Zod-validated structured output are sent from an authenticated worker action.
-- **Backend:** authenticated DeepSpace server actions in the app worker. No separate API server.
+- **Access:** account-free, with a random HttpOnly cookie identifying one temporary browser session.
+- **Storage:** isolated SQLite-backed `HandSessionRoom` Durable Objects; uploads and results expire 30 minutes after the last connection closes.
+- **AI:** server-only `createDeepSpaceAI` calls to Anthropic `claude-sonnet-5`, protected by strict input/output schemas, rate limits, and idempotency keys.
+- **Backend:** a narrow same-origin session API in the app worker. No generic integration proxy or browser-visible provider credential.
 
 ## Features
 
@@ -19,7 +18,8 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 - Evidence-backed reference comparison with omissions, discrepancies, unsupported additions, correct concepts, and human-review findings.
 - Deterministic score aggregation: coverage 40%, agreement 35%, technical fidelity 25%; non-applicable technical weight is renormalized.
 - Correction workspace with original output preserved, stale-score warning, and explicit comparison rerun.
-- Persistent searchable/filterable library, private source images, safe deletion, Markdown export, and JSON export.
+- Session-scoped recents, private source images, immediate deletion, Markdown export, and JSON export.
+- Light/dark themes and mobile camera capture alongside file upload and drag-and-drop.
 
 ## Local setup
 
@@ -32,7 +32,7 @@ npx deepspace app init
 npm run dev
 ```
 
-The app is then available at the URL printed by `deepspace dev start` (normally `http://localhost:8780`). DeepSpace private R2 uploads require an `APP_IDENTITY_TOKEN`, which local development does not mint; verify the complete upload workflow on a deployed app.
+The app is then available at the URL printed by `deepspace dev start` (normally `http://localhost:8780`).
 
 ## Verification
 
@@ -44,7 +44,7 @@ npm run build
 npx deepspace test run all
 ```
 
-Paid AI calls are not required by unit tests. Full end-to-end AI verification requires an authenticated account with DeepSpace credits.
+Paid AI calls are not required by automated tests. Live model verification uses the app owner's DeepSpace credits through server-only credentials.
 
 ## Deployment
 
@@ -64,13 +64,13 @@ The successful command prints the authoritative `https://<name>.app.space` URL. 
 
 ## Data behavior
 
-Records are stored in the per-app SQLite-backed `RecordRoom` and persist across reloads, worker restarts, and deployments under the immutable `DEEPSPACE_APP_ID`. Source images live in the app's managed R2 bucket under per-user scope. Deletion removes source objects first and preserves the record if any file deletion fails.
+Each browser receives a 256-bit opaque session id in an HttpOnly, Secure, SameSite=Strict cookie. Its uploads and analysis records live only in one `HandSessionRoom`. A hibernatable WebSocket tracks active tabs; after the final connection drops, an alarm atomically deletes the session after 30 minutes. Users can also clear it immediately from Settings.
 
 ## Known boundaries
 
-- Library search is client-side across the 500 most recently updated authorized records because DeepSpace records do not provide a server full-text index.
-- Full private-file upload cannot be exercised under local development before the first deploy; this is a documented platform limitation.
-- The app uses request-bound analysis. The upload cap keeps the JSON action body below the platform request limit. A job-room migration is appropriate if future model latency exceeds request execution limits.
+- A session holds at most 20 analyses and six AI calls per rolling ten-minute window.
+- Clearing cookies starts a separate session; no identity is collected to recover an expired workspace.
+- Analysis remains request-bound. The 14 MB upload cap keeps the encoded request below the worker's enforced 20 MB body limit.
 - Production deployment is performed automatically only after the `main` workflow's checks pass;
   paid model evaluation is not part of the automated test suite.
 

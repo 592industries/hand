@@ -1,18 +1,29 @@
-import { signOut, useUser } from 'deepspace'
-import { Bot, Cloud, Database, LockKeyhole } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Bot, Clock3, Database, LockKeyhole } from 'lucide-react'
 import { Eyebrow, PageShell, Panel } from '../../../components/AppShell'
 import { Button } from '../../../components/ui'
+import { sessionApi } from '../../../lib/session'
 
 export default function SettingsPage() {
-  const { user } = useUser()
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+
+  async function clear() {
+    if (!window.confirm('Clear every upload and analysis in this session now?')) return
+    setBusy(true)
+    await sessionApi.clear()
+    navigate('/new', { replace: true })
+  }
+
   return <PageShell width="max-w-4xl">
-    <Eyebrow>Configuration</Eyebrow><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Settings & privacy</h1><p className="mt-2 text-muted-foreground">How H.A.N.D. handles your notes and analysis.</p>
+    <Eyebrow>Privacy</Eyebrow><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Session & privacy</h1><p className="mt-2 text-muted-foreground">H.A.N.D. works without accounts or personal profiles.</p>
     <div className="mt-8 grid gap-5 md:grid-cols-2">
-      <Panel><LockKeyhole className="text-primary" /><h2 className="mt-4 font-bold">Your account</h2><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-muted-foreground">Name</dt><dd>{user?.name ?? '—'}</dd></div><div><dt className="text-muted-foreground">Email</dt><dd>{user?.email ?? '—'}</dd></div></dl><Button variant="secondary" className="mt-6" onClick={() => signOut()}>Sign out</Button></Panel>
-      <Panel><Bot className="text-primary" /><h2 className="mt-4 font-bold">AI model</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Anthropic Claude Sonnet 5 through DeepSpace’s managed AI proxy. Model calls run server-side; no provider credential is shipped to your browser.</p></Panel>
-      <Panel><Database className="text-primary" /><h2 className="mt-4 font-bold">Saved analyses</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Structured results live in DeepSpace’s SQLite-backed record room. Owner permissions are enforced by the server for every record read and write.</p></Panel>
-      <Panel><Cloud className="text-primary" /><h2 className="mt-4 font-bold">Source images</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Images use private per-user DeepSpace R2 storage. They require your authenticated session and are removed before their analysis record is deleted.</p></Panel>
+      <Panel><LockKeyhole className="text-primary" /><h2 className="mt-4 font-bold">No account data</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">There is no sign-up, login, name, email, or user profile. A random HttpOnly cookie only connects this browser to its temporary workspace.</p></Panel>
+      <Panel><Clock3 className="text-primary" /><h2 className="mt-4 font-bold">30-minute cleanup</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Uploads and results are deleted 30 minutes after the last browser connection closes. Reconnecting before then keeps the session available.</p></Panel>
+      <Panel><Bot className="text-primary" /><h2 className="mt-4 font-bold">Protected AI access</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">AI calls run only through the server, with schema validation, per-session rate limits, request-size limits, and idempotency protection.</p></Panel>
+      <Panel><Database className="text-primary" /><h2 className="mt-4 font-bold">Temporary storage</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Images and analyses remain inside one isolated session Durable Object. Source images are never published through a public file URL.</p></Panel>
     </div>
-    <Panel className="mt-5"><h2 className="font-bold">Upload limits</h2><p className="mt-2 text-sm text-muted-foreground">Up to 6 JPG, PNG, or WebP images; 4 MB per image and 14 MB total. Images must be 64–12,000 pixels per side. Plain-text and Markdown references may be up to 1 MB / 120,000 characters.</p></Panel>
+    <Panel className="mt-5"><h2 className="font-bold">Clear this session now</h2><p className="mt-2 text-sm text-muted-foreground">Immediately remove all current uploads, transcriptions, comparisons, and recent items.</p><Button variant="destructive" className="mt-4" loading={busy} onClick={() => void clear()}>Clear session data</Button></Panel>
   </PageShell>
 }
