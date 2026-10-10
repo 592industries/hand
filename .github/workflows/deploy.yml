@@ -19,8 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DEEPSPACE_EMAIL: ${{ secrets.DEEPSPACE_EMAIL }}
-      DEEPSPACE_PASSWORD: ${{ secrets.DEEPSPACE_PASSWORD }}
+      DEEPSPACE_SESSION: ${{ secrets.DEEPSPACE_SESSION }}
 
     steps:
       - name: Check out repository
@@ -41,17 +40,18 @@ jobs:
       - name: Verify deployment credentials
         shell: bash
         run: |
-          if [[ -z "$DEEPSPACE_EMAIL" ]]; then
-            echo "::error::Missing GitHub Actions secret DEEPSPACE_EMAIL"
-            exit 1
-          fi
-          if [[ -z "$DEEPSPACE_PASSWORD" ]]; then
-            echo "::error::Missing GitHub Actions secret DEEPSPACE_PASSWORD"
+          if [[ -z "$DEEPSPACE_SESSION" ]]; then
+            echo "::error::Missing GitHub Actions secret DEEPSPACE_SESSION"
             exit 1
           fi
 
-      - name: Authenticate with DeepSpace
-        run: npx deepspace auth login --json
+      - name: Authenticate with DeepSpace session
+        shell: bash
+        run: |
+          install -d -m 700 "$HOME/.deepspace"
+          printf '%s' "$DEEPSPACE_SESSION" > "$HOME/.deepspace/session"
+          chmod 600 "$HOME/.deepspace/session"
+          npx deepspace auth whoami --json
 
       - name: Install Chromium and Linux browser libraries
         run: npx playwright install --with-deps chromium

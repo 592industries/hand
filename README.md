@@ -48,8 +48,8 @@ Paid AI calls are not required by unit tests. Full end-to-end AI verification re
 
 ## Deployment
 
-Pushes to `main` are verified and deployed by GitHub Actions. Configure the two GitHub
-repository secrets documented in [ENVIRONMENT.md](./ENVIRONMENT.md), then push normally.
+Pushes to `main` are verified and deployed by GitHub Actions. Configure the GitHub repository
+secret documented in [ENVIRONMENT.md](./ENVIRONMENT.md), then push normally.
 The workflow installs Chromium's Linux system libraries before running the complete DeepSpace
 test suite, preventing browser tests from failing on GitHub's clean Ubuntu runners.
 

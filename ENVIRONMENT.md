@@ -14,18 +14,17 @@ No entry needs to be added manually to DeepSpace Secrets/Variables for the curre
 
 ## GitHub Actions deployment credentials
 
-The deployment workflow authenticates the DeepSpace CLI non-interactively. Add these as
-**GitHub repository secrets** (Settings → Secrets and variables → Actions → Secrets), not as
-DeepSpace application variables and not as plain GitHub variables:
+The deployment workflow authenticates the DeepSpace CLI non-interactively. Add this as a
+**GitHub repository secret** (Settings → Secrets and variables → Actions → Secrets), not as a
+DeepSpace application variable and not as a plain GitHub variable:
 
 | Name | Required | Purpose |
 |---|---:|---|
-| `DEEPSPACE_EMAIL` | Yes | Email for the DeepSpace account that owns or can deploy H.A.N.D. |
-| `DEEPSPACE_PASSWORD` | Yes | Password for that DeepSpace account. Keep this secret and rotate it if exposed. |
+| `DEEPSPACE_SESSION` | Yes | DeepSpace CLI session for an account that owns or can deploy H.A.N.D. Keep it secret and rotate it if exposed. |
 
-The workflow validates both names before attempting a deployment. GitHub masks secret values
-in logs; the CLI reads them from its documented environment variables, so neither value is
-placed on the command line.
+The workflow validates the secret, writes it to the DeepSpace CLI's session file with owner-only
+permissions on the ephemeral runner, and verifies the account before testing or deployment.
+GitHub masks the secret value in logs and the value is never placed on the command line.
 
 ## Values DeepSpace injects automatically
 
