@@ -14,7 +14,7 @@ test.describe('workspace', () => {
   test('upload area offers files or camera', async ({ page }) => {
     await page.goto('/new')
     await page.getByRole('button', { name: /drop note images here/i }).click()
-    await expect(page.getByRole('button', { name: 'Upload files' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Upload files', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Take photo' })).toBeVisible()
   })
 
