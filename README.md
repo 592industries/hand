@@ -6,7 +6,7 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 
 - **Runtime and hosting:** DeepSpace 0.39.3, Vite, React 19, Hono, Cloudflare Worker.
 - **Access:** account-free, with a random HttpOnly cookie identifying one temporary browser session.
-- **Storage:** isolated SQLite-backed `HandSessionRoom` Durable Objects; uploads and results expire 30 minutes after the last connection closes.
+- **Storage:** isolated SQLite-backed `HandSessionRoom` Durable Objects; application cleanup is scheduled after 30 minutes without a browser connection or valid session activity.
 - **AI:** server-only `createDeepSpaceAI` calls to Anthropic `claude-sonnet-5`, protected by strict input/output schemas, rate limits, and idempotency keys.
 - **Backend:** a narrow same-origin session API in the app worker. No generic integration proxy or browser-visible provider credential.
 
@@ -20,6 +20,7 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 - Correction workspace with original output preserved, stale-score warning, and explicit comparison rerun.
 - Session-scoped recents, private source images, immediate deletion, Markdown export, and JSON export.
 - Light/dark themes and mobile camera capture alongside file upload and drag-and-drop.
+- Blue brand themes, a shared H.A.N.D footer, and public Privacy, Terms, Acceptable Use, Cookie/Session, and AI Accuracy pages.
 
 ## Local setup
 
@@ -64,7 +65,7 @@ The successful command prints the authoritative `https://<name>.app.space` URL. 
 
 ## Data behavior
 
-Each browser receives a 256-bit opaque session id in an HttpOnly, Secure, SameSite=Strict cookie. Its uploads and analysis records live only in one `HandSessionRoom`. A hibernatable WebSocket tracks active tabs; after the final connection drops, an alarm atomically deletes the session after 30 minutes. Users can also clear it immediately from Settings.
+Each browser receives a 256-bit opaque session id in an HttpOnly, Secure, SameSite=Strict cookie. Its uploads and analysis records live only in one `HandSessionRoom`. A hibernatable WebSocket and valid requests refresh session activity; after activity stops, an alarm schedules application-data deletion after 30 minutes. Users can also clear the current session from Settings. Provider and infrastructure retention can differ; see the [data inventory](./docs/DATA_INVENTORY.md) and [Privacy Policy](https://hand.592industries.com/privacy).
 
 ## Known boundaries
 

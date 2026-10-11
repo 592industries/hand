@@ -29,7 +29,7 @@ export const seo = {
   /** Public origin for canonical URLs, og:url, and the sitemap — no trailing
    *  slash. Replace with the custom domain once one is attached, e.g.
    *  'https://www.example.com'. */
-  origin: typeof __DEEPSPACE_SITE_ORIGIN__ === 'string' ? __DEEPSPACE_SITE_ORIGIN__ : 'http://localhost',
+  origin: typeof __DEEPSPACE_SITE_ORIGIN__ === 'string' ? __DEEPSPACE_SITE_ORIGIN__ : 'https://hand.592industries.com',
   /** 1200×630 preview image generated from the supplied H.A.N.D logo. */
   ogImage: '/brand/hand-social-v1.jpg',
   noindex: false,

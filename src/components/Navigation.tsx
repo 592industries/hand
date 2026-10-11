@@ -12,7 +12,7 @@ export default function Navigation() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [theme, setTheme] = useState<HandTheme>(() =>
-    document.documentElement.dataset.theme === 'hand-ink' ? 'hand-ink' : 'hand-paper',
+    typeof document !== 'undefined' && document.documentElement.dataset.theme === 'hand-ink' ? 'hand-ink' : 'hand-paper',
   )
 
   useEffect(() => setMobileMenuOpen(false), [location.pathname])
