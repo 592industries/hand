@@ -1,4 +1,4 @@
-# H.A.N.D. v0.9 architecture
+# H.A.N.D. v1.0 architecture
 
 H.A.N.D. is public and account-free. The browser receives a random opaque cookie; no name,
 email, account, or recoverable identity is created.

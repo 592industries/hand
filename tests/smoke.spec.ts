@@ -7,6 +7,7 @@ test.describe('workspace', () => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/new$/)
     await expect(page.getByRole('heading', { name: 'Bring your notes into focus.' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'H.A.N.D. home' }).locator('img')).toHaveAttribute('src', '/brand/hand-mark-v1-64.png')
     await expect(page.getByText(/sign in/i)).toHaveCount(0)
     expect(errors).toEqual([])
   })

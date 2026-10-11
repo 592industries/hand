@@ -30,7 +30,7 @@ export const seo = {
    *  slash. Replace with the custom domain once one is attached, e.g.
    *  'https://www.example.com'. */
   origin: typeof __DEEPSPACE_SITE_ORIGIN__ === 'string' ? __DEEPSPACE_SITE_ORIGIN__ : 'http://localhost',
-  /** 1200×630 preview image, root-relative to public/ (e.g. '/og.png'). */
-  // ogImage: '/og.png',
+  /** 1200×630 preview image generated from the supplied H.A.N.D. logo. */
+  ogImage: '/brand/hand-social-v1.jpg',
   noindex: false,
 }
