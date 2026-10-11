@@ -18,7 +18,7 @@ export default function AppLayout() {
       <div className="flex min-h-screen flex-col bg-background">
         <Navigation />
         <main className="min-h-0 flex-1">
-          <Suspense fallback={<div className="flex h-full items-center justify-center text-muted-foreground">Loading…</div>}>
+          <Suspense fallback={<div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-10 sm:px-6" aria-label="Loading page"><div className="h-16 animate-pulse rounded-xl bg-muted" /><div className="h-72 animate-pulse rounded-xl bg-muted" /></div>}>
             <Outlet />
           </Suspense>
         </main>

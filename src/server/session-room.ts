@@ -6,7 +6,7 @@ import {
   compareToReference,
   transcribeImages,
 } from '../ai/analysis.js'
-import { EMPTY_TRANSCRIPTION, type AnalysisRecord, type SessionAnalysisRecord } from '../domain/types.js'
+import { EMPTY_TRANSCRIPTION, type AnalysisRecord, type ProcessingStage, type SessionAnalysisRecord } from '../domain/types.js'
 import { decodeAndValidateDataUrl, normalizeReference, validateImageMetadata } from '../domain/validation.js'
 import type { Env } from '../../worker.js'
 
@@ -36,6 +36,8 @@ function emptyRecord(input: ReturnType<typeof analyzeRequestSchema.parse>, refer
     subject: input.subject,
     topic: input.topic,
     status: 'processing',
+    processingStage: 'preparing',
+    processingStartedAt: new Date().toISOString(),
     imageFilesJson: JSON.stringify(input.imageFiles),
     referenceText,
     referenceFileName: input.referenceFileName,
@@ -146,12 +148,12 @@ export class HandSessionRoom {
     if (running) return running
     const existingId = await this.state.storage.get<string>(`idem:${body.requestId}`)
     if (existingId) return { success: true, data: { recordId: existingId } }
-    const operation = this.runAnalysis(body).finally(() => this.inflight.delete(body.requestId))
+    const operation = this.prepareAnalysis(body).finally(() => this.inflight.delete(body.requestId))
     this.inflight.set(body.requestId, operation)
     return operation
   }
 
-  private async runAnalysis(input: ReturnType<typeof analyzeRequestSchema.parse>): Promise<Json> {
+  private async prepareAnalysis(input: ReturnType<typeof analyzeRequestSchema.parse>): Promise<Json> {
     await this.consumeAiBudget()
     const ids = await this.ids()
     if (ids.length >= MAX_ANALYSES) return { success: false, error: `This session is limited to ${MAX_ANALYSES} analyses. Delete one to continue.` }
@@ -178,27 +180,46 @@ export class HandSessionRoom {
     await Promise.all(images.map((image, index) => this.writeBytes(`image:${recordId}:${index}`, image.bytes)))
     await this.state.storage.put(`idem:${input.requestId}`, recordId)
 
+    this.state.waitUntil(this.runAnalysis(envelope, images))
+    return { success: true, data: { recordId, status: 'processing' } }
+  }
+
+  private async runAnalysis(
+    envelope: SessionAnalysisRecord,
+    images: Array<{ metadata: ReturnType<typeof validateImageMetadata>[number]; bytes: Uint8Array }>,
+  ): Promise<void> {
     try {
+      await this.setStage(envelope, 'transcribing')
       const transcription = await transcribeImages(this.env, this.env.APP_OWNER_JWT, images)
-      const comparison = envelope.data.referenceText
-        ? await compareToReference(this.env, this.env.APP_OWNER_JWT, transcription.fullText, envelope.data.referenceText)
-        : null
+      let comparison = null
+      if (envelope.data.referenceText) {
+        await this.setStage(envelope, 'comparing')
+        comparison = await compareToReference(this.env, this.env.APP_OWNER_JWT, transcription.fullText, envelope.data.referenceText)
+      }
+      await this.setStage(envelope, 'finalizing')
       envelope.data = {
         ...envelope.data,
-        title: input.title || transcription.suggestedTopic || 'Untitled notes',
-        subject: input.subject || transcription.suggestedSubject,
-        topic: input.topic || transcription.suggestedTopic,
+        title: envelope.data.title || transcription.suggestedTopic || 'Untitled notes',
+        subject: envelope.data.subject || transcription.suggestedSubject,
+        topic: envelope.data.topic || transcription.suggestedTopic,
         status: 'needs_review',
+        processingStage: 'complete',
         originalTranscriptionJson: JSON.stringify(transcription),
         comparisonJson: comparison ? JSON.stringify(comparison) : '',
       }
     } catch (error) {
       envelope.data.status = 'failed'
+      envelope.data.processingStage = 'failed'
       envelope.data.errorSummary = safeError(error)
     }
     envelope.updatedAt = new Date().toISOString()
     await this.saveAnalysis(envelope)
-    return { success: true, data: { recordId, failed: envelope.data.status === 'failed' } }
+  }
+
+  private async setStage(envelope: SessionAnalysisRecord, stage: ProcessingStage): Promise<void> {
+    envelope.data.processingStage = stage
+    envelope.updatedAt = new Date().toISOString()
+    await this.saveAnalysis(envelope)
   }
 
   private async rerun(id: string, request: Request): Promise<Json> {

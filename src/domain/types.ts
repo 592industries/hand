@@ -83,12 +83,23 @@ export const analysisStatusSchema = z.enum([
   'failed',
 ])
 
+export const processingStageSchema = z.enum([
+  'preparing',
+  'transcribing',
+  'comparing',
+  'finalizing',
+  'complete',
+  'failed',
+])
+
 export const analysisRecordSchema = z.object({
   schemaVersion: z.literal(1),
   title: z.string(),
   subject: z.string(),
   topic: z.string(),
   status: analysisStatusSchema,
+  processingStage: processingStageSchema.default('complete'),
+  processingStartedAt: z.string().default(''),
   imageFilesJson: z.string(),
   referenceText: z.string(),
   referenceFileName: z.string(),
@@ -110,6 +121,7 @@ export type ScoreBreakdown = z.infer<typeof scoreBreakdownSchema>
 export type ImageFile = z.infer<typeof imageFileSchema>
 export type AnalysisRecord = z.infer<typeof analysisRecordSchema>
 export type AnalysisStatus = z.infer<typeof analysisStatusSchema>
+export type ProcessingStage = z.infer<typeof processingStageSchema>
 
 export interface SessionAnalysisRecord {
   recordId: string

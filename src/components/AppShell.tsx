@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 export function PageShell({ children, width = 'max-w-7xl' }: { children: ReactNode; width?: string }) {
-  return <div className={`mx-auto w-full ${width} px-4 py-8 sm:px-6 sm:py-12`}>{children}</div>
+  return <div className={`mx-auto w-full ${width} px-4 py-7 sm:px-6 sm:py-10`}>{children}</div>
 }
 
 export function Eyebrow({ children }: { children: ReactNode }) {
@@ -9,7 +9,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-xl border border-border bg-card p-5 ${className}`}>{children}</section>
+  return <section className={`rounded-xl border border-border bg-card p-4 sm:p-5 ${className}`}>{children}</section>
 }
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {

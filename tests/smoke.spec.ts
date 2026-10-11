@@ -58,6 +58,8 @@ test.describe('workspace', () => {
     }
     await page.getByRole('link', { name: 'Privacy', exact: true }).click()
     await expect(page).toHaveURL(/\/privacy$/)
+    await expect(page.getByTestId('app-footer')).toContainText('A 592 Industries product. Contact support · +1 (516) 336-9270')
+    await expect(page.getByTestId('app-footer')).toContainText('© 2026 592 Industries')
   })
 
   test('brand assets load and policy pages make no third-party requests', async ({ page, request }) => {

@@ -4,6 +4,7 @@ import { EMPTY_TRANSCRIPTION, type AnalysisRecord } from './types'
 
 const record: AnalysisRecord = {
   schemaVersion: 1, title: 'Physics / Week 1', subject: 'Physics', topic: 'Motion', status: 'saved',
+  processingStage: 'complete', processingStartedAt: '',
   imageFilesJson: '[]', referenceText: '', referenceFileName: '', hasReference: 0,
   originalTranscriptionJson: JSON.stringify(EMPTY_TRANSCRIPTION), correctedTranscription: 'Corrected text',
   comparisonJson: '', comparisonStale: 0, modelProvider: 'anthropic', modelId: 'claude-sonnet-5',

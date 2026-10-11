@@ -8,6 +8,8 @@ export const analysesSchema: CollectionSchema = {
     { name: 'subject', storage: 'text', interpretation: 'plain' },
     { name: 'topic', storage: 'text', interpretation: 'plain' },
     { name: 'status', storage: 'text', interpretation: 'plain' },
+    { name: 'processingStage', storage: 'text', interpretation: 'plain' },
+    { name: 'processingStartedAt', storage: 'text', interpretation: 'plain' },
     { name: 'imageFilesJson', storage: 'text', interpretation: 'plain' },
     { name: 'referenceText', storage: 'text', interpretation: 'plain' },
     { name: 'referenceFileName', storage: 'text', interpretation: 'plain' },

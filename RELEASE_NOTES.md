@@ -1,3 +1,22 @@
+# H.A.N.D v2.2.0
+
+H.A.N.D v2.2.0 makes analysis progress transparent and turns results into a focused document-review workspace.
+
+## Highlights
+
+- Starts analysis as a session-backed background job and reports real preparation, transcription, comparison, and finalization stages.
+- Adds resilient 3.5-second status polling, elapsed time, reconnect feedback, and safe navigation while work continues.
+- Makes the transcription the main results surface, with explicit editing, unsaved-change feedback, and recoverable original AI output.
+- Consolidates reference metrics and evidence into a compact summary with accessible expandable findings.
+- Omits non-applicable technical scores instead of presenting them as failures.
+- Standardizes loading and empty states and replaces the oversized footer with the required compact 592 Industries attribution.
+
+## Compatibility
+
+Existing session records remain readable. No new environment variables or provider credentials are required.
+
+---
+
 # H.A.N.D v2.1.0
 
 H.A.N.D v2.1.0 completes the product's blue brand system and adds evidence-based privacy and service policies without changing the analysis, scoring, or account-free session model.

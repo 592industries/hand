@@ -30,8 +30,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const sessionApi = {
   list: () => request<SessionAnalysisRecord[]>('/analyses'),
-  get: (id: string) => request<SessionAnalysisRecord>(`/analyses/${encodeURIComponent(id)}`),
-  analyze: (body: Record<string, unknown> & { requestId: string }) => request<{ recordId: string; failed?: boolean }>('/analyses', {
+  get: (id: string, signal?: AbortSignal) => request<SessionAnalysisRecord>(`/analyses/${encodeURIComponent(id)}`, { signal }),
+  analyze: (body: Record<string, unknown> & { requestId: string }) => request<{ recordId: string; status: 'processing' }>('/analyses', {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': body.requestId }, body: JSON.stringify(body),
   }),
   update: (id: string, body: Record<string, unknown>) => request<SessionAnalysisRecord>(`/analyses/${encodeURIComponent(id)}`, {
