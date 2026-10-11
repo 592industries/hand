@@ -53,4 +53,4 @@ Use `npx deepspace rollback` only after identifying the target release and impac
 
 The application provides a health route and safe error responses but does not include a separate analytics, APM, or error-reporting SDK. Provider-level request and worker logs may exist. Alerting, log retention, branch protection, and external uptime monitoring were not verified from repository code.
 
-[Deployment Pipeline Diagram](../diagrams/deployment-pipeline.md) · [Environment Reference](../ENVIRONMENT.md) · [DeepSpace guidance](../AGENTS.md)
+[Deployment Pipeline Diagram](../diagrams/deployment-pipeline.md) · [Environment Reference](https://github.com/592industries/hand/blob/main/ENVIRONMENT.md) · [DeepSpace guidance](https://github.com/592industries/hand/blob/main/AGENTS.md)

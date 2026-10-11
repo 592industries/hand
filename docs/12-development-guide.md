@@ -64,6 +64,6 @@ Create a focused feature branch from the current intended base. Keep secrets, `.
 
 ## Environment values
 
-The only GitHub deployment secret is `DEEPSPACE_SESSION`. DeepSpace supplies runtime bindings and server credentials. See [ENVIRONMENT.md](../ENVIRONMENT.md) for the complete inventory and handling rules.
+The only GitHub deployment secret is `DEEPSPACE_SESSION`. DeepSpace supplies runtime bindings and server credentials. See the product source's [Environment Reference](https://github.com/592industries/hand/blob/main/ENVIRONMENT.md) for the complete inventory and handling rules.
 
 [Operations](10-deployment-and-operations.md) · [Verification](09-verification-validation.md)

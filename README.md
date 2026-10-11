@@ -4,6 +4,8 @@
 
 [Open H.A.N.D](https://hand.592industries.com/) · [User guide](docs/02-user-guide.md) · [Architecture](docs/04-system-architecture.md) · [Privacy model](docs/07-session-and-privacy.md)
 
+> This branch is the public documentation edition of H.A.N.D and intentionally contains no application source code, deployment configuration, dependencies, tests, or credentials. The maintained product source is on [`main`](https://github.com/592industries/hand/tree/main).
+
 ## What H.A.N.D does
 
 - Accepts up to six JPG, PNG, or WebP note images, including a device-camera option.
@@ -109,7 +111,7 @@ npm run build
 npx deepspace test run all
 ```
 
-Automated tests do not make paid model calls. See the [Development Guide](docs/12-development-guide.md) and [Environment Reference](ENVIRONMENT.md).
+Automated tests do not make paid model calls. See the [Development Guide](docs/12-development-guide.md) and the product source's [Environment Reference](https://github.com/592industries/hand/blob/main/ENVIRONMENT.md).
 
 ## Deployment
 
