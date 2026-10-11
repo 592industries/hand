@@ -7,7 +7,7 @@ import {
   transcribeImages,
 } from '../ai/analysis.js'
 import { EMPTY_TRANSCRIPTION, type AnalysisRecord, type ProcessingStage, type SessionAnalysisRecord } from '../domain/types.js'
-import { decodeAndValidateDataUrl, normalizeReference, validateImageMetadata } from '../domain/validation.js'
+import { decodeAndValidateDataUrl, imageDimensions, normalizeReference, validateImageMetadata } from '../domain/validation.js'
 import type { Env } from '../../worker.js'
 
 const IDLE_TTL_MS = 30 * 60_000
@@ -55,6 +55,8 @@ function emptyRecord(input: ReturnType<typeof analyzeRequestSchema.parse>, refer
 
 export class HandSessionRoom {
   private readonly inflight = new Map<string, Promise<Json>>()
+  private generation = 0
+  private storageTail: Promise<void> = Promise.resolve()
 
   constructor(private readonly state: DurableObjectState, private readonly env: Env) {}
 
@@ -71,7 +73,7 @@ export class HandSessionRoom {
       if (request.method === 'GET' && path === '/analyses') return response({ success: true, data: await this.list() })
       if (request.method === 'POST' && path === '/analyses') return response(await this.analyze(request))
       if (request.method === 'DELETE' && path === '/') {
-        await this.state.storage.deleteAll()
+        await this.clearSession()
         return response({ success: true, data: {} })
       }
 
@@ -99,16 +101,18 @@ export class HandSessionRoom {
   }
 
   async alarm(): Promise<void> {
-    if (this.state.getWebSockets().length) return
-    const lastSeen = (await this.state.storage.get<number>('lastSeen')) ?? 0
-    const remaining = lastSeen + IDLE_TTL_MS - Date.now()
-    if (remaining > 0) await this.state.storage.setAlarm(Date.now() + remaining)
-    else await this.state.storage.deleteAll()
+    await this.withStorageLock(async () => {
+      if (this.state.getWebSockets().length) return
+      const lastSeen = (await this.state.storage.get<number>('lastSeen')) ?? 0
+      const remaining = lastSeen + IDLE_TTL_MS - Date.now()
+      if (remaining > 0) await this.state.storage.setAlarm(Date.now() + remaining)
+      else { this.generation += 1; await this.state.storage.deleteAll() }
+    })
   }
 
   async webSocketMessage(ws: WebSocket, message: ArrayBuffer | string): Promise<void> {
     if (message === 'ping') ws.send('pong')
-    await this.state.storage.put('lastSeen', Date.now())
+    await this.withStorageLock(() => this.state.storage.put('lastSeen', Date.now()))
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
@@ -124,19 +128,25 @@ export class HandSessionRoom {
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     this.state.acceptWebSocket(server)
-    await this.state.storage.put('lastSeen', Date.now())
-    await this.state.storage.deleteAlarm()
+    await this.withStorageLock(async () => {
+      await this.state.storage.put('lastSeen', Date.now())
+      await this.state.storage.deleteAlarm()
+    })
     return new Response(null, { status: 101, webSocket: client })
   }
 
   private async touch(): Promise<void> {
-    await this.state.storage.put('lastSeen', Date.now())
-    if (!this.state.getWebSockets().length) await this.state.storage.setAlarm(Date.now() + IDLE_TTL_MS)
+    await this.withStorageLock(async () => {
+      await this.state.storage.put('lastSeen', Date.now())
+      if (!this.state.getWebSockets().length) await this.state.storage.setAlarm(Date.now() + IDLE_TTL_MS)
+    })
   }
 
   private async scheduleCleanup(): Promise<void> {
-    await this.state.storage.put('lastSeen', Date.now())
-    await this.state.storage.setAlarm(Date.now() + IDLE_TTL_MS)
+    await this.withStorageLock(async () => {
+      await this.state.storage.put('lastSeen', Date.now())
+      await this.state.storage.setAlarm(Date.now() + IDLE_TTL_MS)
+    })
   }
 
   private async analyze(request: Request): Promise<Json> {
@@ -155,6 +165,7 @@ export class HandSessionRoom {
 
   private async prepareAnalysis(input: ReturnType<typeof analyzeRequestSchema.parse>): Promise<Json> {
     await this.consumeAiBudget()
+    const generation = this.generation
     const ids = await this.ids()
     if (ids.length >= MAX_ANALYSES) return { success: false, error: `This session is limited to ${MAX_ANALYSES} analyses. Delete one to continue.` }
 
@@ -163,6 +174,10 @@ export class HandSessionRoom {
     const images = metadata.map((item, index) => {
       const bytes = decodeAndValidateDataUrl(input.imageDataUrls[index], item.mimeType)
       if (bytes.byteLength !== item.size) throw new Error(`${item.name} size does not match its metadata`)
+      const dimensions = imageDimensions(bytes, item.mimeType)
+      if (!dimensions || dimensions.width !== item.width || dimensions.height !== item.height) {
+        throw new Error(`${item.name} dimensions do not match its image data`)
+      }
       return { metadata: item, bytes }
     })
     const recordId = crypto.randomUUID()
@@ -176,27 +191,38 @@ export class HandSessionRoom {
       data: emptyRecord(normalizedInput, normalizeReference(input.referenceText)),
     }
 
-    await this.saveAnalysis(envelope)
-    await Promise.all(images.map((image, index) => this.writeBytes(`image:${recordId}:${index}`, image.bytes)))
-    await this.state.storage.put(`idem:${input.requestId}`, recordId)
+    await this.withStorageLock(async () => {
+      if (generation !== this.generation) throw new Error('Session was cleared before the upload completed')
+      try {
+        await this.saveAnalysis(envelope)
+        await Promise.all(images.map((image, index) => this.writeBytes(`image:${recordId}:${index}`, image.bytes)))
+        await this.state.storage.put(`idem:${input.requestId}`, recordId)
+      } catch (error) {
+        await this.removeStoredAnalysis(recordId, images.length)
+        throw error
+      }
+    })
 
-    this.state.waitUntil(this.runAnalysis(envelope, images))
+    this.state.waitUntil(this.runAnalysis(envelope, images, generation))
     return { success: true, data: { recordId, status: 'processing' } }
   }
 
   private async runAnalysis(
     envelope: SessionAnalysisRecord,
     images: Array<{ metadata: ReturnType<typeof validateImageMetadata>[number]; bytes: Uint8Array }>,
+    generation: number,
   ): Promise<void> {
     try {
-      await this.setStage(envelope, 'transcribing')
+      if (!await this.setStage(envelope, 'transcribing', generation)) return
       const transcription = await transcribeImages(this.env, this.env.APP_OWNER_JWT, images)
+      if (generation !== this.generation) return
       let comparison = null
       if (envelope.data.referenceText) {
-        await this.setStage(envelope, 'comparing')
+        if (!await this.setStage(envelope, 'comparing', generation)) return
         comparison = await compareToReference(this.env, this.env.APP_OWNER_JWT, transcription.fullText, envelope.data.referenceText)
+        if (generation !== this.generation) return
       }
-      await this.setStage(envelope, 'finalizing')
+      if (!await this.setStage(envelope, 'finalizing', generation)) return
       envelope.data = {
         ...envelope.data,
         title: envelope.data.title || transcription.suggestedTopic || 'Untitled notes',
@@ -208,18 +234,19 @@ export class HandSessionRoom {
         comparisonJson: comparison ? JSON.stringify(comparison) : '',
       }
     } catch (error) {
+      if (generation !== this.generation) return
       envelope.data.status = 'failed'
       envelope.data.processingStage = 'failed'
       envelope.data.errorSummary = safeError(error)
     }
     envelope.updatedAt = new Date().toISOString()
-    await this.saveAnalysis(envelope)
+    await this.saveIfCurrent(envelope, generation)
   }
 
-  private async setStage(envelope: SessionAnalysisRecord, stage: ProcessingStage): Promise<void> {
+  private async setStage(envelope: SessionAnalysisRecord, stage: ProcessingStage, generation: number): Promise<boolean> {
     envelope.data.processingStage = stage
     envelope.updatedAt = new Date().toISOString()
-    await this.saveAnalysis(envelope)
+    return this.saveIfCurrent(envelope, generation)
   }
 
   private async rerun(id: string, request: Request): Promise<Json> {
@@ -228,6 +255,7 @@ export class HandSessionRoom {
     const cached = await this.state.storage.get<string>(`idem:${key}`)
     if (cached) return { success: true, data: { recordId: id } }
     await this.consumeAiBudget()
+    const generation = this.generation
     const envelope = await this.readAnalysis(id)
     if (!envelope) return { success: false, error: 'Analysis not found' }
     if (!envelope.data.referenceText.trim()) return { success: false, error: 'A reference transcript is required' }
@@ -236,12 +264,16 @@ export class HandSessionRoom {
     const comparison = await compareToReference(this.env, this.env.APP_OWNER_JWT, text, envelope.data.referenceText)
     envelope.data = { ...envelope.data, comparisonJson: JSON.stringify(comparison), comparisonStale: 0, status: 'needs_review', errorSummary: '' }
     envelope.updatedAt = new Date().toISOString()
-    await this.saveAnalysis(envelope)
-    await this.state.storage.put(`idem:${key}`, id)
+    const saved = await this.saveIfCurrent(envelope, generation)
+    if (!saved) return { success: false, error: 'Session was cleared before the comparison completed' }
+    await this.withStorageLock(async () => {
+      if (generation === this.generation) await this.state.storage.put(`idem:${key}`, id)
+    })
     return { success: true, data: { recordId: id } }
   }
 
   private async update(id: string, request: Request): Promise<Json> {
+    const generation = this.generation
     const envelope = await this.readAnalysis(id)
     if (!envelope) return { success: false, error: 'Analysis not found' }
     const body = await request.json<Json>()
@@ -255,7 +287,7 @@ export class HandSessionRoom {
       status: body.status === 'saved' ? 'saved' : envelope.data.status,
     }
     envelope.updatedAt = new Date().toISOString()
-    await this.saveAnalysis(envelope)
+    if (!await this.saveIfCurrent(envelope, generation)) return { success: false, error: 'Session was cleared before the update completed' }
     return { success: true, data: envelope }
   }
 
@@ -263,8 +295,7 @@ export class HandSessionRoom {
     const envelope = await this.readAnalysis(id)
     if (!envelope) return { success: false, error: 'Analysis not found' }
     const count = JSON.parse(envelope.data.imageFilesJson).length as number
-    await Promise.all([this.deleteBytes(`analysis:${id}`), ...Array.from({ length: count }, (_, index) => this.deleteBytes(`image:${id}:${index}`))])
-    await this.state.storage.put('ids', (await this.ids()).filter((item) => item !== id))
+    await this.withStorageLock(() => this.removeStoredAnalysis(id, count))
     return { success: true, data: {} }
   }
 
@@ -293,26 +324,63 @@ export class HandSessionRoom {
     if (!ids.includes(record.recordId)) await this.state.storage.put('ids', [record.recordId, ...ids])
   }
 
+  private async saveIfCurrent(record: SessionAnalysisRecord, generation: number): Promise<boolean> {
+    return this.withStorageLock(async () => {
+      if (generation !== this.generation) return false
+      await this.saveAnalysis(record)
+      return true
+    })
+  }
+
+  private async removeStoredAnalysis(id: string, imageCount: number): Promise<void> {
+    await Promise.all([this.deleteBytes(`analysis:${id}`), ...Array.from({ length: imageCount }, (_, index) => this.deleteBytes(`image:${id}:${index}`))])
+    await this.state.storage.put('ids', (await this.ids()).filter((item) => item !== id))
+  }
+
+  private async clearSession(): Promise<void> {
+    await this.withStorageLock(async () => {
+      this.generation += 1
+      await this.state.storage.deleteAll()
+    })
+  }
+
+  private async withStorageLock<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = this.storageTail
+    let release = () => {}
+    this.storageTail = new Promise<void>((resolve) => { release = resolve })
+    await previous
+    try { return await operation() }
+    finally { release() }
+  }
+
   private async readAnalysis(id: string): Promise<SessionAnalysisRecord | null> {
     const bytes = await this.readBytes(`analysis:${id}`)
     return bytes ? JSON.parse(new TextDecoder().decode(bytes)) as SessionAnalysisRecord : null
   }
 
   private async consumeAiBudget(): Promise<void> {
-    const now = Date.now()
-    const recent = ((await this.state.storage.get<number[]>('aiCalls')) ?? []).filter((time) => now - time < RATE_WINDOW_MS)
-    if (recent.length >= AI_CALL_LIMIT) throw new Error('AI request limit reached. Try again in a few minutes.')
-    await this.state.storage.put('aiCalls', [...recent, now])
+    await this.withStorageLock(async () => {
+      const now = Date.now()
+      const recent = ((await this.state.storage.get<number[]>('aiCalls')) ?? []).filter((time) => now - time < RATE_WINDOW_MS)
+      if (recent.length >= AI_CALL_LIMIT) throw new Error('AI request limit reached. Try again in a few minutes.')
+      await this.state.storage.put('aiCalls', [...recent, now])
+    })
   }
 
   private async writeBytes(key: string, bytes: Uint8Array): Promise<void> {
     await this.deleteBytes(key)
     const count = Math.ceil(bytes.byteLength / CHUNK_BYTES)
-    await Promise.all(Array.from({ length: count }, (_, index) => {
-      const chunk = bytes.slice(index * CHUNK_BYTES, (index + 1) * CHUNK_BYTES)
-      return this.state.storage.put(`${key}:${index}`, chunk.buffer)
-    }))
-    await this.state.storage.put(`${key}:chunks`, count)
+    const chunkKeys = Array.from({ length: count }, (_, index) => `${key}:${index}`)
+    try {
+      await Promise.all(chunkKeys.map((chunkKey, index) => {
+        const chunk = bytes.slice(index * CHUNK_BYTES, (index + 1) * CHUNK_BYTES)
+        return this.state.storage.put(chunkKey, chunk.buffer)
+      }))
+      await this.state.storage.put(`${key}:chunks`, count)
+    } catch (error) {
+      await this.state.storage.delete([`${key}:chunks`, ...chunkKeys])
+      throw error
+    }
   }
 
   private async readBytes(key: string): Promise<Uint8Array | null> {

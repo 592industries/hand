@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { PageShell } from './AppShell'
 
-export const POLICY_DATE = 'October 10, 2026'
+export const POLICY_DATE = 'October 11, 2026'
 
 export function PolicyPage({ title, summary, children }: { title: string; summary: string; children: ReactNode }) {
   return <PageShell width="max-w-4xl">

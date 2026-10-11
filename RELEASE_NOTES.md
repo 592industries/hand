@@ -1,3 +1,21 @@
+# H.A.N.D v2.2.1
+
+H.A.N.D v2.2.1 refines review readability and makes phone-photo uploads safer and more reliable.
+
+## Highlights
+
+- Starts every findings and uncertainty section collapsed while preserving accessible native controls and counts.
+- Replaces transcription serif styling with the interface typeface and consistent spacing for headings, paragraphs, and nested lists.
+- Accepts HEIC, JPEG, PNG, and WebP sources, then validates, resizes, and compresses them in the browser before upload when needed.
+- Raises normalized upload limits to 8 MB per image and 30 MB total across six images, with a 42 MB server request ceiling for base64 overhead.
+- Serializes session cleanup and storage writes so an expired or manually cleared session cannot be repopulated by in-flight analysis work.
+
+## Compatibility
+
+No storage migration, environment variable, scoring, export, or provider change is required.
+
+---
+
 # H.A.N.D v2.2.0
 
 H.A.N.D v2.2.0 makes analysis progress transparent and turns results into a focused document-review workspace.
