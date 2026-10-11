@@ -1,30 +1,96 @@
 # H.A.N.D
 
-Handwritten Analysis & Note Digitization is a DeepSpace-native application for transcribing academic notes and, when a reference is supplied, evaluating their semantic correspondence with transparent evidence and deterministic scoring.
+**Handwritten Analysis & Note Digitization** turns photos and scans of handwritten academic notes into structured, reviewable text. Users can add optional reference material to identify supported concepts, omissions, discrepancies, and unsupported additions with a deterministic correspondence score.
+
+[Open H.A.N.D](https://hand.592industries.com/) · [User guide](docs/02-user-guide.md) · [Architecture](docs/04-system-architecture.md) · [Privacy model](docs/07-session-and-privacy.md)
+
+## What H.A.N.D does
+
+- Accepts up to six JPG, PNG, or WebP note images, including a device-camera option.
+- Produces a structured transcription with sections, equations, concepts, a summary, legibility, and uncertainty markers.
+- Optionally compares the transcription with user-supplied text or Markdown reference material.
+- Validates comparison evidence and calculates the final score in application code.
+- Preserves the original model output when a user corrects the transcription.
+- Keeps recent work in an isolated temporary session for review, search, export, and deletion.
+- Exports Markdown and JSON in the browser.
+
+AI output can be wrong. H.A.N.D is a study and organization tool, not an authoritative grade or source. See the [AI Accuracy Notice](https://hand.592industries.com/ai-disclaimer).
+
+## User journey
+
+```mermaid
+flowchart LR
+    A[Open New analysis] --> B[Upload or photograph pages]
+    B --> C[Add title and optional reference]
+    C --> D[Run analysis]
+    D --> E[Review transcription and evidence]
+    E --> F{Correction needed?}
+    F -->|Yes| G[Edit and save]
+    G --> H[Optional comparison rerun]
+    F -->|No| I[Export or keep in session library]
+    H --> I
+```
 
 ## Architecture
 
-- **Runtime and hosting:** DeepSpace 0.39.3, Vite, React 19, Hono, Cloudflare Worker.
-- **Access:** account-free, with a random HttpOnly cookie identifying one temporary browser session.
-- **Storage:** isolated SQLite-backed `HandSessionRoom` Durable Objects; application cleanup is scheduled after 30 minutes without a browser connection or valid session activity.
-- **AI:** server-only `createDeepSpaceAI` calls to Anthropic `claude-sonnet-5`, protected by strict input/output schemas, rate limits, and idempotency keys.
-- **Backend:** a narrow same-origin session API in the app worker. No generic integration proxy or browser-visible provider credential.
+```mermaid
+flowchart LR
+    User[User] --> Browser[React application]
+    Browser --> Worker[Hono worker]
+    Worker --> Session[Session API]
+    Session --> Room[(Isolated HandSessionRoom)]
+    Session --> AI[DeepSpace AI service]
+    AI --> Model[Anthropic model]
+    Worker --> Assets[Static assets and prerendered policies]
+```
 
-## Features
+The frontend and API deploy together as a DeepSpace application on Cloudflare Workers. A random secure cookie selects one SQLite-backed Durable Object session. The browser never receives provider credentials. See [System Architecture](docs/04-system-architecture.md) and the [diagram collection](diagrams/architecture-overview.md).
 
-- Multi-image JPG/PNG/WebP upload with signatures, dimensions, per-file, count, and aggregate limits.
-- Optional pasted or uploaded text/Markdown reference.
-- Structured transcription, sections, equations, concepts, summary, tags, legibility, and uncertainty annotations.
-- Evidence-backed reference comparison with omissions, discrepancies, unsupported additions, correct concepts, and human-review findings.
-- Deterministic score aggregation: coverage 40%, agreement 35%, technical fidelity 25%; non-applicable technical weight is renormalized.
-- Correction workspace with original output preserved, stale-score warning, and explicit comparison rerun.
-- Session-scoped recents, private source images, immediate deletion, Markdown export, and JSON export.
-- Light/dark themes and mobile camera capture alongside file upload and drag-and-drop.
-- Blue brand themes, a shared H.A.N.D footer, and public Privacy, Terms, Acceptable Use, Cookie/Session, and AI Accuracy pages.
+## Privacy summary
 
-## Local setup
+H.A.N.D does not require an account, name, email address, or payment information. Account-free does not mean data-free: it processes note images, optional reference material, metadata, transcriptions, corrections, results, a random session identifier, and operational counters.
 
-Prerequisites: Node `>=22.15 <23` (or supported Node 24/26), npm `>=11.6`, and a DeepSpace account.
+Browser connections and valid session activity refresh the session timestamp. When activity stops, H.A.N.D schedules application-data cleanup after 30 minutes. Users can also clear the current session in Settings. The 30-minute window does not control AI-provider logs, infrastructure records, browser caches, or downloaded exports. Read [Session and Privacy](docs/07-session-and-privacy.md), the [data inventory](docs/DATA_INVENTORY.md), and the public [Privacy Policy](https://hand.592industries.com/privacy).
+
+## Technology
+
+| Area | Verified implementation |
+|---|---|
+| Frontend | React 19, TypeScript, Vite 8, React Router/Generouted, Tailwind CSS 4 |
+| Worker API | Hono on Cloudflare Workers through DeepSpace |
+| Session storage | SQLite-backed Durable Object (`HandSessionRoom`) |
+| AI | DeepSpace server-side AI proxy, Anthropic `claude-sonnet-5`, AI SDK structured output, Zod |
+| Validation | Zod schemas plus image signature, dimensions, and byte limits |
+| Testing | Vitest and Playwright through the DeepSpace test runner |
+| Delivery | GitHub Actions and `npx deepspace deploy` after checks pass on `main` |
+
+## Documentation
+
+| Chapter | Purpose |
+|---|---|
+| [01 — Overview](docs/01-overview.md) | Product purpose, users, boundaries, and capabilities |
+| [02 — User Guide](docs/02-user-guide.md) | Step-by-step use and recovery guidance |
+| [03 — Product Requirements](docs/03-product-requirements.md) | Implemented and partial requirements with evidence |
+| [04 — System Architecture](docs/04-system-architecture.md) | Components, boundaries, storage, and request flow |
+| [05 — Analysis Pipeline](docs/05-analysis-pipeline.md) | Validation, AI processing, persistence, and failures |
+| [06 — Scoring and Comparison](docs/06-scoring-and-comparison.md) | Reference suitability, findings, and score formula |
+| [07 — Session and Privacy](docs/07-session-and-privacy.md) | Cookie, isolation, retention, deletion, and providers |
+| [08 — API and Data Contracts](docs/08-api-and-data-contracts.md) | Session endpoints, envelopes, schemas, and limits |
+| [09 — Verification and Validation](docs/09-verification-validation.md) | Test layers, commands, observed results, and gaps |
+| [10 — Deployment and Operations](docs/10-deployment-and-operations.md) | CI/CD, bindings, release flow, and recovery |
+| [11 — Limitations and Tradeoffs](docs/11-limitations-and-tradeoffs.md) | Current boundaries and future considerations |
+| [12 — Development Guide](docs/12-development-guide.md) | Setup, commands, contribution, and safe testing |
+| [13 — Accessibility and Usability](docs/13-accessibility-and-usability.md) | Implemented behavior and audit gaps |
+| [14 — Glossary](docs/14-glossary.md) | Product and engineering terminology |
+| [15 — Traceability Matrix](docs/15-traceability-matrix.md) | Major claims mapped to code, tests, and configuration |
+
+Evidence appendices: [Data Inventory](docs/DATA_INVENTORY.md) · [Privacy and Security Review](docs/PRIVACY_SECURITY_REVIEW.md) · [Policy Decisions](docs/POLICY_DECISIONS.md)
+
+Diagrams: [System Context](diagrams/system-context.md) · [Architecture](diagrams/architecture-overview.md) · [Analysis](diagrams/analysis-workflow.md) · [Comparison](diagrams/reference-comparison.md) · [Session](diagrams/session-lifecycle.md) · [Request](diagrams/request-sequence.md) · [Deployment](diagrams/deployment-pipeline.md) · [Data Boundaries](diagrams/data-boundaries.md)
+
+## Development and verification
+
+Node 22, 24, or 26 and npm 11.6 or newer are required.
 
 ```bash
 npm install
@@ -33,9 +99,7 @@ npx deepspace app init
 npm run dev
 ```
 
-The app is then available at the URL printed by `deepspace dev start` (normally `http://localhost:8780`).
-
-## Verification
+Before a pull request:
 
 ```bash
 npm run type-check
@@ -45,33 +109,28 @@ npm run build
 npx deepspace test run all
 ```
 
-Paid AI calls are not required by automated tests. Live model verification uses the app owner's DeepSpace credits through server-only credentials.
+Automated tests do not make paid model calls. See the [Development Guide](docs/12-development-guide.md) and [Environment Reference](ENVIRONMENT.md).
 
 ## Deployment
 
-Pushes to `main` are verified and deployed by GitHub Actions. Configure the GitHub repository
-secret documented in [ENVIRONMENT.md](./ENVIRONMENT.md), then push normally.
-The workflow installs Chromium's Linux system libraries before running the complete DeepSpace
-test suite, preventing browser tests from failing on GitHub's clean Ubuntu runners.
+Pushes to `main` start the GitHub Actions workflow. It installs dependencies and Chromium system libraries, authenticates with the `DEEPSPACE_SESSION` repository secret, runs type, lint, and the complete DeepSpace test suite, then deploys. Feature and documentation branches do not deploy production.
 
-For an intentional manual deployment from a trusted workstation:
+## Known limits
 
-```bash
-npx deepspace auth whoami
-npx deepspace deploy
-```
+- No account recovery or cross-device session sync.
+- Six images, 4 MB per image, 14 MB combined, and 20 analyses per session.
+- Six AI calls per rolling ten-minute session window.
+- Reference text must be suitable before a score is available.
+- AI transcription and comparison can be wrong.
+- Cleanup is activity-based and does not set provider retention.
+- No claim of WCAG conformance, penetration testing, or formal security certification.
 
-The successful command prints the authoritative `https://<name>.app.space` URL. See [ENVIRONMENT.md](./ENVIRONMENT.md) for every binding and variable.
+See [Limitations and Tradeoffs](docs/11-limitations-and-tradeoffs.md).
 
-## Data behavior
+## Releases
 
-Each browser receives a 256-bit opaque session id in an HttpOnly, Secure, SameSite=Strict cookie. Its uploads and analysis records live only in one `HandSessionRoom`. A hibernatable WebSocket and valid requests refresh session activity; after activity stops, an alarm schedules application-data deletion after 30 minutes. Users can also clear the current session from Settings. Provider and infrastructure retention can differ; see the [data inventory](./docs/DATA_INVENTORY.md) and [Privacy Policy](https://hand.592industries.com/privacy).
+- [v2.0.0](https://github.com/592industries/hand/releases/tag/v2.0.0) — interface redesign and account-free workspace refinement.
+- [v1.0.0](https://github.com/592industries/hand/releases/tag/v1.0.0) — optimized H.A.N.D brand assets.
+- v2.1.0 is documented from commit `7050b91`; it becomes a release only after review, merge, and release publication.
 
-## Known boundaries
-
-- A session holds at most 20 analyses and six AI calls per rolling ten-minute window.
-- Clearing cookies starts a separate session; no identity is collected to recover an expired workspace.
-- Analysis remains request-bound. The 14 MB upload cap keeps the encoded request below the worker's enforced 20 MB body limit.
-- Production deployment is performed automatically only after the `main` workflow's checks pass;
-  paid model evaluation is not part of the automated test suite.
-
+H.A.N.D is a [592 Industries](https://592industries.com/) product.
