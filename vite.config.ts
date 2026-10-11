@@ -11,6 +11,8 @@ const appDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   build: {
+    target: 'safari15',
+    cssTarget: 'safari15',
     // Keep third-party libraries out of the application entry chunk. Besides
     // eliminating Vite's 500 kB warning, this gives browsers a stable vendor
     // asset to cache independently from H.A.N.D releases.
@@ -34,8 +36,13 @@ export default defineConfig({
               priority: 20,
             },
             {
-              name: 'ui-vendor',
-              test: /node_modules[\\/](?:@base-ui|lucide-react)[\\/]/,
+              name: 'base-ui-vendor',
+              test: /node_modules[\\/]@base-ui[\\/]/,
+              priority: 15,
+            },
+            {
+              name: 'icons-vendor',
+              test: /node_modules[\\/]lucide-react[\\/]/,
               priority: 10,
             },
             {

@@ -7,9 +7,16 @@ import { openSessionConnection } from '../../lib/session'
 
 export default function AppLayout() {
   useEffect(() => {
+    let disposed = false
     let close: (() => void) | undefined
-    void openSessionConnection().then((cleanup) => { close = cleanup }).catch(() => {})
-    return () => close?.()
+    void openSessionConnection().then((cleanup) => {
+      if (disposed) cleanup()
+      else close = cleanup
+    }).catch(() => {})
+    return () => {
+      disposed = true
+      close?.()
+    }
   }, [])
 
   return (

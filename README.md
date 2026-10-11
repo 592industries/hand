@@ -20,6 +20,7 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 - Correction workspace with original output preserved, stale-score warning, and explicit comparison rerun.
 - Session-scoped recents, private source images, immediate deletion, Markdown export, and JSON export.
 - Light/dark themes and mobile camera capture alongside file upload and drag-and-drop.
+- Safari-compatible mobile startup with an immediate loading shell, safe-area layout, and resilient session reconnection.
 - Blue brand themes, a shared H.A.N.D footer, and public Privacy, Terms, Acceptable Use, Cookie/Session, and AI Accuracy pages.
 
 ## Local setup

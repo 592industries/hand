@@ -164,6 +164,8 @@
     /* Default to dark for native form controls (calendar icons, scrollbars).
      * Light themes opt into `color-scheme: light` in themes.css. */
     color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   html, body, #root {
@@ -179,6 +181,7 @@
     -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
     color: var(--color-foreground);
+    overflow-x: hidden;
   }
 
   /* Scrollbar styling */
@@ -219,6 +222,15 @@
     outline-offset: 3px;
   }
 }
+
+/* Modern mobile browsers expose the visible viewport separately from the
+   browser chrome. Keep full-height screens and loading states inside it. */
+@supports (min-height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+}
+
+.safe-area-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
 
 @media (prefers-reduced-motion: reduce) {
   html, body, #root { scroll-behavior: auto; }

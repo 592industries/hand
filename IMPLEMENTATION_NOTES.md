@@ -1,4 +1,11 @@
-# H.A.N.D v2.2.1 architecture
+# H.A.N.D v2.2.2 architecture
+
+The app shell includes a small inline loading state so client-only routes remain visible while
+Safari downloads route modules. Client routes mount immediately; only already-prerendered public
+pages wait for route initialization so their server-rendered HTML hydrates cleanly. Production
+assets use content hashes and immutable browser caching, and the client output targets Safari 15.
+The session connection pauses while a page is backgrounded or offline and reconnects with bounded
+exponential backoff, avoiding repeated mobile network work during iOS lifecycle transitions.
 
 H.A.N.D is public and account-free. The browser receives a random opaque cookie; no name,
 email, account, or recoverable identity is created.
