@@ -12,7 +12,7 @@ Handwritten Analysis & Note Digitization is a DeepSpace-native application for t
 
 ## Features
 
-- Multi-image JPG/PNG/WebP upload with signatures, dimensions, per-file, count, and aggregate limits.
+- Browser-normalized HEIC/JPEG/PNG/WebP upload with signatures, dimensions, per-file, count, and aggregate limits.
 - Optional pasted or uploaded text/Markdown reference.
 - Structured transcription, sections, equations, concepts, summary, tags, legibility, and uncertainty annotations.
 - Evidence-backed reference comparison with omissions, discrepancies, unsupported additions, correct concepts, and human-review findings.
@@ -71,7 +71,7 @@ Each browser receives a 256-bit opaque session id in an HttpOnly, Secure, SameSi
 
 - A session holds at most 20 analyses and six AI calls per rolling ten-minute window.
 - Clearing cookies starts a separate session; no identity is collected to recover an expired workspace.
-- Analysis remains request-bound. The 14 MB upload cap keeps the encoded request below the worker's enforced 20 MB body limit.
+- Analysis remains request-bound. Normalized images are limited to 8 MB each, 30 MB total, and six files. The worker's 42 MB body limit safely includes base64 and request metadata overhead.
 - Production deployment is performed automatically only after the `main` workflow's checks pass;
   paid model evaluation is not part of the automated test suite.
 

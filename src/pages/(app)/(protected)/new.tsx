@@ -6,48 +6,19 @@ import { PageHeader, PageShell, StepHeading } from '../../../components/AppShell
 import { Button, Input, Label, Modal, Textarea } from '../../../components/ui'
 import { sessionApi } from '../../../lib/session'
 import {
-  ACCEPTED_IMAGE_TYPES,
-  MAX_IMAGE_BYTES,
   MAX_IMAGES,
   MAX_REFERENCE_BYTES,
   MAX_TOTAL_IMAGE_BYTES,
-  matchesImageSignature,
 } from '../../../domain/validation'
 import type { ImageFile } from '../../../domain/types'
-
-type PendingImage = { file: File; preview: string; dataUrl: string; width: number; height: number }
-
-async function inspectImage(file: File): Promise<PendingImage> {
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type as typeof ACCEPTED_IMAGE_TYPES[number])) throw new Error(`${file.name}: use JPG, PNG, or WebP`)
-  if (file.size > MAX_IMAGE_BYTES) throw new Error(`${file.name}: maximum size is 4 MB`)
-  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer())
-  if (!matchesImageSignature(head, file.type)) throw new Error(`${file.name}: file contents do not match the image type`)
-  const preview = URL.createObjectURL(file)
-  const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight })
-    image.onerror = () => reject(new Error(`${file.name}: the image could not be decoded`))
-    image.src = preview
-  })
-  if (dimensions.width < 64 || dimensions.height < 64 || dimensions.width > 12_000 || dimensions.height > 12_000) {
-    URL.revokeObjectURL(preview)
-    throw new Error(`${file.name}: dimensions must be between 64 and 12,000 pixels`)
-  }
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(new Error(`${file.name}: the image could not be read`))
-    reader.readAsDataURL(file)
-  })
-  return { file, preview, dataUrl, ...dimensions }
-}
+import { normalizeImage, type NormalizedImage } from '../../../lib/image-normalization'
 
 export default function NewAnalysisPage() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
-  const imagesRef = useRef<PendingImage[]>([])
-  const [images, setImages] = useState<PendingImage[]>([])
+  const imagesRef = useRef<NormalizedImage[]>([])
+  const [images, setImages] = useState<NormalizedImage[]>([])
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
   const [topic, setTopic] = useState('')
@@ -58,6 +29,7 @@ export default function NewAnalysisPage() {
   const [referenceError, setReferenceError] = useState('')
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [normalizing, setNormalizing] = useState(false)
   const [startedAt, setStartedAt] = useState('')
   const [showSourceOptions, setShowSourceOptions] = useState(false)
 
@@ -66,17 +38,21 @@ export default function NewAnalysisPage() {
 
   async function addFiles(files: File[]) {
     setImageError('')
-    if (!files.length) return
+    if (!files.length || normalizing || busy) return
+    const normalized: NormalizedImage[] = []
+    setNormalizing(true)
     try {
       if (images.length + files.length > MAX_IMAGES) throw new Error(`You can upload up to ${MAX_IMAGES} images`)
-      const inspected = await Promise.all(files.map(inspectImage))
-      const total = [...images, ...inspected].reduce((sum, image) => sum + image.file.size, 0)
+      for (const file of files) normalized.push(await normalizeImage(file))
+      const total = [...images, ...normalized].reduce((sum, image) => sum + image.file.size, 0)
       if (total > MAX_TOTAL_IMAGE_BYTES) {
-        inspected.forEach((image) => URL.revokeObjectURL(image.preview))
-        throw new Error('Images exceed the 14 MB total limit')
+        throw new Error('Images exceed the 30 MB total limit after optimization')
       }
-      setImages((current) => [...current, ...inspected])
-    } catch (cause) { setImageError(cause instanceof Error ? cause.message : 'Could not add images') }
+      setImages((current) => [...current, ...normalized])
+    } catch (cause) {
+      normalized.forEach((image) => URL.revokeObjectURL(image.preview))
+      setImageError(cause instanceof Error ? cause.message : 'Could not add images')
+    } finally { setNormalizing(false) }
   }
 
   async function readReference(file?: File) {
@@ -92,7 +68,7 @@ export default function NewAnalysisPage() {
   }
 
   async function start() {
-    if (busy) return
+    if (busy || normalizing) return
     setImageError(images.length ? '' : 'Add at least one handwritten note image')
     setTitleError(title.trim() ? '' : 'Add a title for this analysis')
     if (!images.length || !title.trim()) return
@@ -116,7 +92,7 @@ export default function NewAnalysisPage() {
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault()
-    if (!busy) void addFiles(Array.from(event.dataTransfer.files))
+    if (!busy && !normalizing) void addFiles(Array.from(event.dataTransfer.files))
   }
 
   if (busy) return <PageShell><AnalysisProgress title={title} fileName={images[0]?.file.name} pageCount={images.length} stage="preparing" startedAt={startedAt} hasReference={Boolean(referenceText.trim())} /></PageShell>
@@ -126,13 +102,13 @@ export default function NewAnalysisPage() {
 
     <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
-        <StepHeading number="01" title="Pages" description="JPG, PNG, or WebP · 4 MB each · 14 MB total · up to 6" />
+        <StepHeading number="01" title="Pages" description="HEIC, JPG, PNG, or WebP · 8 MB each · 30 MB total · up to 6" />
         <div>
-          <div role="button" tabIndex={0} aria-label="Drop note images here; upload files or take a photo" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setShowSourceOptions(true) } }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => setShowSourceOptions(true)} className="cursor-pointer rounded-xl border border-dashed border-input bg-background/55 px-5 py-9 text-center transition-colors hover:border-primary"><UploadCloud className="mx-auto text-primary" /><p className="mt-3 font-semibold">Drop note images here</p><p className="mt-1 text-sm text-muted-foreground">Upload files or take a photo</p></div>
-          <input ref={inputRef} className="sr-only" type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
-          <input ref={cameraRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
+          <div role="button" tabIndex={normalizing ? -1 : 0} aria-busy={normalizing} aria-disabled={normalizing} aria-label="Drop note images here; upload files or take a photo" onKeyDown={(event) => { if (!normalizing && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); setShowSourceOptions(true) } }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => { if (!normalizing) setShowSourceOptions(true) }} className="cursor-pointer rounded-xl border border-dashed border-input bg-background/55 px-5 py-9 text-center transition-colors hover:border-primary"><UploadCloud className="mx-auto text-primary" /><p className="mt-3 font-semibold">{normalizing ? 'Optimizing images…' : 'Drop note images here'}</p><p className="mt-1 text-sm text-muted-foreground">{normalizing ? 'Keeping handwriting clear for analysis' : 'Upload files or take a photo'}</p></div>
+          <input ref={inputRef} className="sr-only" type="file" multiple accept=".heic,.heif,image/heic,image/heif,image/jpeg,image/png,image/webp" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
+          <input ref={cameraRef} className="sr-only" type="file" accept=".heic,.heif,image/heic,image/heif,image/jpeg,image/png,image/webp" capture="environment" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
           {imageError && <p role="alert" className="mt-3 text-sm text-destructive">{imageError}</p>}
-          {images.length > 0 && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{images.map((image, index) => <div key={`${image.file.name}-${index}`} className="group relative overflow-hidden rounded-lg border border-border bg-background"><img src={image.preview} alt={`Preview of ${image.file.name}`} className="aspect-[4/3] w-full object-cover" /><button aria-label={`Remove ${image.file.name}`} onClick={() => { URL.revokeObjectURL(image.preview); setImages((current) => current.filter((_, itemIndex) => itemIndex !== index)) }} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-lg bg-black/75 text-white"><Trash2 size={14} /></button><p className="truncate p-2 text-xs">{image.file.name}</p></div>)}</div>}
+          {images.length > 0 && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{images.map((image, index) => <div key={`${image.file.name}-${index}`} className="group relative overflow-hidden rounded-lg border border-border bg-background"><img src={image.preview} alt={`Preview of ${image.file.name}`} className="aspect-[4/3] w-full object-cover" /><button aria-label={`Remove ${image.file.name}`} onClick={() => { URL.revokeObjectURL(image.preview); setImages((current) => current.filter((_, itemIndex) => itemIndex !== index)) }} className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-lg bg-black/75 text-white"><Trash2 size={14} /></button><p className="truncate p-2 text-xs">{image.file.name}{image.optimized ? ' · Optimized' : ''}</p></div>)}</div>}
         </div>
       </section>
 
@@ -148,7 +124,7 @@ export default function NewAnalysisPage() {
 
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
         <StepHeading number="04" title="Analyze" />
-        <div className="flex justify-end"><Button size="lg" onClick={() => void start()} loading={busy}><Sparkles /> Start analysis</Button></div>
+        <div className="flex justify-end"><Button size="lg" onClick={() => void start()} loading={busy} disabled={normalizing}><Sparkles /> Start analysis</Button></div>
       </section>
     </div>
 

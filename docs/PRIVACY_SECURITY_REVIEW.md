@@ -1,6 +1,6 @@
 # H.A.N.D privacy and security review
 
-Updated: October 10, 2026
+Updated: October 11, 2026
 
 This is an engineering review of the anonymous-session design, not a penetration test, legal opinion, or certification. Severity reflects likely impact and ease of abuse based on the inspected code.
 
@@ -13,11 +13,11 @@ This is an engineering review of the anonymous-session design, not a penetration
 | Insecure direct object reference | High | Analysis ids appear in app URLs | Every operation is routed through the cookie-selected room before record lookup | Mitigated in design; dedicated cross-session record test remains desirable |
 | Cross-site request forgery | High | Mutations and session WebSocket could be targeted from another origin | Same-origin/`Sec-Fetch-Site` checks, strict SameSite cookie, JSON content requirement | Mitigated in code and API tests |
 | Prompt injection in notes or references | High | User content is included in AI requests | Prompts label uploads as untrusted data and direct the model not to follow embedded instructions; outputs are schema validated | Reduced; model behavior cannot be guaranteed |
-| Malformed or oversized images | Medium | Browser and server receive user-controlled files | MIME allowlist, byte-signature check, per-file and total limits, dimension bounds, request body limit | Mitigated in code and unit tests; decompression behavior depends on provider/runtime |
+| Malformed or oversized images | Medium | Browser and server receive user-controlled files | Browser-side HEIC conversion and resizing, normalized MIME allowlist, byte-signature checks, 8 MB per-file and 30 MB total limits, dimension bounds, and a 42 MB request limit that includes base64 overhead | Mitigated in code and unit tests; browser codec and decompression behavior still varies by device |
 | AI cost or resource abuse | High | Analysis and rerun actions consume model resources | Per-session analysis cap, rolling AI-call limit, upload/body limits, idempotency, same-origin checks | Reduced; distributed abuse across new sessions remains possible |
 | Duplicate processing | Medium | Network retries can repeat paid work | Client request identifiers and stored idempotency results | Mitigated in code |
 | Sensitive content in logs | High | Runtime can log error messages and providers may log request metadata | Client receives safe errors; application does not intentionally log note bodies | Partially mitigated; platform and provider log contents/retention are unverified |
-| Incomplete automatic cleanup | High | Cleanup depends on `lastSeen`, connection signals, and a room alarm | Durable storage alarm reschedules on renewed activity and calls `deleteAll()` after inactivity; manual clear is available | Implemented but not proven across every eviction/restart scenario; no automated expiry test currently exercises production semantics |
+| Incomplete automatic cleanup | High | Cleanup depends on `lastSeen`, connection signals, and a room alarm | Durable storage alarm reschedules on renewed activity; per-room storage mutations are serialized, cleanup invalidates in-flight background saves, partial writes are recoverable, and manual clear uses the same isolated path | Strengthened in code; restart and platform alarm semantics still require a deployed integration test |
 | Expired cookie reused before cleanup | Medium | Cookie has no fixed expiry and server does not reject by elapsed age on each request | Cleanup alarm removes stored data after inactivity | Open design limitation; a restored cookie can create or resume a room if cleanup has not run |
 | Orphaned or provider-held data | High | AI processing crosses application boundaries | Policy separates application deletion from provider retention; no separate app file store exists | Provider behavior unverified; requires contractual/configuration review |
 | Browser cache and downloaded exports | Medium | Previews and downloads exist on the user's device | Image API uses private/no-store; object URLs are local and revoked when removed; explicit session clear available | Reduced; downloaded files and some browser artifacts remain outside application control |
@@ -27,7 +27,7 @@ This is an engineering review of the anonymous-session design, not a penetration
 
 ## Retention assessment
 
-The implemented 30-minute window begins from the last recorded valid activity. Requests call `touch()`. Active WebSocket pings also refresh the timestamp. When the final browser connection closes or errors, an alarm is scheduled. At alarm time, the room checks the stored timestamp and open connections; it reschedules if the session is still active and otherwise deletes all room storage.
+The implemented 30-minute window begins from the last recorded valid activity. Requests call `touch()`. Active WebSocket pings also refresh the timestamp. When the final browser connection closes or errors, an alarm is scheduled. At alarm time, the room checks the stored timestamp and open connections; it reschedules if the session is still active and otherwise deletes that room's storage. Cleanup and file writes share a per-room lock, and a generation guard prevents background analysis from recreating deleted data. Separate session rooms and shared application resources are not targeted.
 
 Important limits:
 

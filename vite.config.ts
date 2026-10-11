@@ -29,6 +29,11 @@ export default defineConfig({
               priority: 20,
             },
             {
+              name: 'heic-converter',
+              test: /node_modules[\\/]heic-to[\\/]/,
+              priority: 20,
+            },
+            {
               name: 'ui-vendor',
               test: /node_modules[\\/](?:@base-ui|lucide-react)[\\/]/,
               priority: 10,

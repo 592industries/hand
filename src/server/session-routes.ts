@@ -1,9 +1,9 @@
 import type { Context, Hono } from 'hono'
 import type { AppContext } from '../../worker.js'
+import { MAX_SESSION_BODY_BYTES } from '../domain/validation.js'
 
 const COOKIE = '__Host-hand-session'
 const SESSION_ID = /^[A-Za-z0-9_-]{43}$/
-const MAX_BODY_BYTES = 20 * 1024 * 1024
 
 function cookieValue(header: string | undefined): string | null {
   const value = header?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${COOKIE}=`))?.slice(COOKIE.length + 1)
@@ -37,13 +37,15 @@ async function forward(c: Context<AppContext>, id: string): Promise<Response> {
     }
   }
 
-  const declared = Number(c.req.header('Content-Length') ?? 0)
-  if (declared > MAX_BODY_BYTES) return c.json({ success: false, error: 'Request is too large' }, 413)
+  const contentLength = c.req.header('Content-Length')
+  const declared = contentLength === undefined ? 0 : Number(contentLength)
+  if (!Number.isFinite(declared) || declared < 0) return c.json({ success: false, error: 'Invalid content length' }, 400)
+  if (declared > MAX_SESSION_BODY_BYTES) return c.json({ success: false, error: 'Request is too large' }, 413)
 
   let request = c.req.raw
   if (!upgrade && !['GET', 'HEAD'].includes(c.req.method)) {
     const body = await c.req.raw.arrayBuffer()
-    if (body.byteLength > MAX_BODY_BYTES) return c.json({ success: false, error: 'Request is too large' }, 413)
+    if (body.byteLength > MAX_SESSION_BODY_BYTES) return c.json({ success: false, error: 'Request is too large' }, 413)
     request = new Request(c.req.url, { method: c.req.method, headers: c.req.raw.headers, body: body.byteLength ? body : undefined })
   }
   return sessionStub(c, id).fetch(request)

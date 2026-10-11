@@ -14,9 +14,37 @@ test.describe('workspace', () => {
 
   test('upload area offers files or camera', async ({ page }) => {
     await page.goto('/new')
+    await expect(page.locator('input[type="file"][multiple]')).toHaveAttribute('accept', /\.heic/)
     await page.getByRole('button', { name: /drop note images here/i }).click()
     await expect(page.getByRole('button', { name: 'Upload files', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Take photo' })).toBeVisible()
+  })
+
+  test('normalizes supported browser image formats and rejects malformed files', async ({ page }) => {
+    for (const mimeType of ['image/jpeg', 'image/png', 'image/webp']) {
+      await page.goto('/new')
+      await page.locator('input[type="file"][multiple]').evaluate(async (input, type) => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 128
+        canvas.height = 128
+        const context = canvas.getContext('2d')!
+        context.fillStyle = '#fff'
+        context.fillRect(0, 0, 128, 128)
+        context.fillStyle = '#1268e8'
+        context.font = '24px sans-serif'
+        context.fillText('Notes', 24, 70)
+        const blob = await new Promise<Blob>((resolve) => canvas.toBlob((value) => resolve(value!), type, 0.92))
+        const transfer = new DataTransfer()
+        transfer.items.add(new File([blob], `notes.${type.split('/')[1]}`, { type }))
+        Object.defineProperty(input, 'files', { configurable: true, value: transfer.files })
+        input.dispatchEvent(new Event('change', { bubbles: true }))
+      }, mimeType)
+      await expect(page.getByAltText(/Preview of notes/)).toBeVisible()
+    }
+
+    await page.goto('/new')
+    await page.locator('input[type="file"][multiple]').setInputFiles({ name: 'fake.png', mimeType: 'image/png', buffer: Buffer.from('not a png') })
+    await expect(page.getByRole('alert')).toContainText('file contents do not match')
   })
 
   test('theme toggle switches to dark mode and persists', async ({ page }) => {
