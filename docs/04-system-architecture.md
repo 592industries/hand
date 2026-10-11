@@ -19,10 +19,10 @@ flowchart TB
 
 | Component | Responsibility |
 |---|---|
-| React application | Routing, upload inspection, editing, library, export, theme, and policy UI |
+| React application | Routing, HEIC conversion and upload normalization, editing, library, export, theme, and policy UI |
 | Hono worker | Security headers, APIs, static fallback, and platform bindings |
 | Session route layer | Cookie creation, same-origin enforcement, JSON/body checks, and room selection |
-| HandSessionRoom | CRUD, image chunks, idempotency, limits, AI orchestration, connection state, and cleanup |
+| HandSessionRoom | CRUD, image chunks, idempotency, limits, background AI orchestration, connection state, serialized storage, and cleanup |
 | Analysis module | Model calls, prompt boundary, structured output, evidence validation, and scoring handoff |
 | DeepSpace | Build/deploy tooling, Cloudflare integration, Durable Objects, and AI proxy |
 | Anthropic | Model inference for transcription and comparison |
@@ -33,9 +33,9 @@ Workspace routes under `(app)` open the temporary session connection: `/home`, `
 
 ## Security and storage boundary
 
-Mutations and WebSocket upgrades must be same-origin. Non-GET writes require JSON except deletion. The worker applies a 20 MB body ceiling and security headers. Analysis ids do not select storage globally: the cookie selects the room first. Images are private and no-store.
+Mutations and WebSocket upgrades must be same-origin. Non-GET writes require JSON except deletion. The worker applies a 42 MB body ceiling, which accommodates the base64 form of the 30 MB normalized image total plus reference and JSON metadata. Analysis ids do not select storage globally: the cookie selects the room first. Images are private and no-store.
 
-Room storage contains an ordered id list, serialized analysis records, 1.5 MB image/record chunks, idempotency entries, AI-call timestamps, and `lastSeen`. There is no separate application database or object store.
+Room storage contains an ordered id list, serialized analysis records, 1.5 MB image/record chunks, idempotency entries, AI-call timestamps, and `lastSeen`. There is no separate application database or object store. Storage mutations use a per-room queue. Cleanup increments a generation marker before deleting the selected room, so older background work cannot repopulate it; failed chunk writes remove their known partial keys.
 
 ## Static delivery
 

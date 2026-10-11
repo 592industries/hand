@@ -6,13 +6,16 @@
 
 > This branch is the public documentation edition of H.A.N.D and intentionally contains no application source code, deployment configuration, dependencies, tests, or credentials. The maintained product source is on [`main`](https://github.com/592industries/hand/tree/main).
 
+**Current documented implementation:** v2.2.1, source commit `605adbcb` on `feature/v2.2.1`. This statement identifies the implementation snapshot; it does not claim that a production tag or release was published.
+
 ## What H.A.N.D does
 
-- Accepts up to six JPG, PNG, or WebP note images, including a device-camera option.
+- Accepts up to six HEIC, JPEG, PNG, or WebP note images, including a device-camera option, and normalizes large phone photos before upload.
 - Produces a structured transcription with sections, equations, concepts, a summary, legibility, and uncertainty markers.
 - Optionally compares the transcription with user-supplied text or Markdown reference material.
 - Validates comparison evidence and calculates the final score in application code.
 - Preserves the original model output when a user corrects the transcription.
+- Starts findings collapsed and uses structured, interface-consistent transcription typography for focused review.
 - Keeps recent work in an isolated temporary session for review, search, export, and deletion.
 - Exports Markdown and JSON in the browser.
 
@@ -62,7 +65,7 @@ Browser connections and valid session activity refresh the session timestamp. Wh
 | Worker API | Hono on Cloudflare Workers through DeepSpace |
 | Session storage | SQLite-backed Durable Object (`HandSessionRoom`) |
 | AI | DeepSpace server-side AI proxy, Anthropic `claude-sonnet-5`, AI SDK structured output, Zod |
-| Validation | Zod schemas plus image signature, dimensions, and byte limits |
+| Validation | Zod schemas plus browser normalization, image signatures, verified dimensions, and byte limits |
 | Testing | Vitest and Playwright through the DeepSpace test runner |
 | Delivery | GitHub Actions and `npx deepspace deploy` after checks pass on `main` |
 
@@ -85,6 +88,7 @@ Browser connections and valid session activity refresh the session timestamp. Wh
 | [13 — Accessibility and Usability](docs/13-accessibility-and-usability.md) | Implemented behavior and audit gaps |
 | [14 — Glossary](docs/14-glossary.md) | Product and engineering terminology |
 | [15 — Traceability Matrix](docs/15-traceability-matrix.md) | Major claims mapped to code, tests, and configuration |
+| [16 — Release History](docs/16-release-history.md) | Version-by-version implementation and verification record |
 
 Evidence appendices: [Data Inventory](docs/DATA_INVENTORY.md) · [Privacy and Security Review](docs/PRIVACY_SECURITY_REVIEW.md) · [Policy Decisions](docs/POLICY_DECISIONS.md)
 
@@ -120,7 +124,7 @@ Pushes to `main` start the GitHub Actions workflow. It installs dependencies and
 ## Known limits
 
 - No account recovery or cross-device session sync.
-- Six images, 4 MB per image, 14 MB combined, and 20 analyses per session.
+- Six normalized images, 8 MB per image, 30 MB combined, and 20 analyses per session.
 - Six AI calls per rolling ten-minute session window.
 - Reference text must be suitable before a score is available.
 - AI transcription and comparison can be wrong.
@@ -131,8 +135,12 @@ See [Limitations and Tradeoffs](docs/11-limitations-and-tradeoffs.md).
 
 ## Releases
 
+- v2.2.1 — upload normalization, actual image-header validation, collapsed findings, transcription typography, and race-safe session cleanup; implementation commit `605adbcb`.
+- v2.2.0 — progress-aware background analysis and the focused document-review workspace; implementation commit `6fde22bb`.
+- v2.1.0 — blue brand integration, public policies, and privacy/security documentation; implementation commit `7050b917`.
 - [v2.0.0](https://github.com/592industries/hand/releases/tag/v2.0.0) — interface redesign and account-free workspace refinement.
 - [v1.0.0](https://github.com/592industries/hand/releases/tag/v1.0.0) — optimized H.A.N.D brand assets.
-- v2.1.0 is documented from commit `7050b91`; it becomes a release only after review, merge, and release publication.
+
+Implementation versions listed without a linked GitHub release describe the maintained source commit and are not a claim that a release tag was published.
 
 H.A.N.D is a [592 Industries](https://592industries.com/) product.

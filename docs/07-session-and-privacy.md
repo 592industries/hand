@@ -22,11 +22,11 @@ stateDiagram-v2
     Deleted --> [*]
 ```
 
-Requests, connection events, and pings can refresh `lastSeen`. With no open WebSocket, an alarm is set 30 minutes from that activity. It reschedules if the room became active and otherwise deletes all room storage. This is scheduled inactivity cleanup, not a per-request signed expiry guarantee.
+Requests, connection events, and pings can refresh `lastSeen`. With no open WebSocket, an alarm is set 30 minutes from that activity. It reschedules if the room became active and otherwise deletes only that room's storage. Storage changes and cleanup are serialized inside the room. Cleanup changes a generation marker, and background analysis checks it before saving, so work started before deletion cannot restore expired files or records. This is scheduled inactivity cleanup, not a per-request signed expiry guarantee.
 
 ## Data and browser storage
 
-The room stores image chunks, metadata, references, original and corrected transcription, comparisons, scores, statuses, timestamps, ids, rate counters, idempotency keys, and activity time. The browser uses the essential cookie, local storage for theme, session storage for one recovery marker, and temporary object URLs for previews.
+The room stores normalized image chunks, metadata, references, original and corrected transcription, comparisons, scores, statuses, timestamps, ids, rate counters, idempotency keys, and activity time. Original selected files and conversion buffers remain in browser memory; the browser also uses the essential cookie, local storage for theme, session storage for one recovery marker, and temporary object URLs for previews.
 
 No advertising or audience-analytics SDK, IndexedDB store, or service worker is present in the inspected application.
 

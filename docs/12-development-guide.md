@@ -28,6 +28,7 @@ Do not invent or hand-edit the DeepSpace app identity. Do not add direct model-p
 |---|---|
 | `src/pages` | File-based frontend routes |
 | `src/components` | Shared layout, brand, and UI components |
+| `src/lib/image-normalization.ts` | Browser HEIC conversion, resize, compression, and normalized upload preparation |
 | `src/domain` | Record parsing, validation, scoring, and export logic |
 | `src/ai` | Server-only prompts, model requests, and schemas |
 | `src/server` | Session route middleware and Durable Object implementation |
@@ -52,6 +53,8 @@ Unit and Playwright tests are designed not to consume paid AI calls. Manually su
 
 - Keep browser and worker code boundaries clear; never import server AI code into the client.
 - Validate untrusted inputs on the server even when the browser also validates them.
+- Keep the HEIC codec lazy-loaded and isolated in its own build chunk so ordinary visits do not download it.
+- When changing uploads, test signatures, real header dimensions, source/normalized limits, combined limits, malformed data, and browser quality.
 - Keep idempotency on any retryable paid mutation.
 - When changing scoring, update the formula tests and public scoring chapter together.
 - When changing retention, providers, cookies, logging, or analytics, update policies and all three privacy evidence documents.

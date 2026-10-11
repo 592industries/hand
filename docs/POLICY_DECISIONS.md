@@ -1,6 +1,6 @@
 # H.A.N.D policy decisions
 
-Updated: October 10, 2026
+Updated: October 11, 2026
 
 These decisions connect public wording to implementation evidence. The policy pages are a legal-drafting starting point and require qualified review.
 
@@ -8,6 +8,7 @@ These decisions connect public wording to implementation evidence. The policy pa
 |---|---|---|
 | Operator name | H.A.N.D is described as a 592 Industries product; no separate company is invented | Repository ownership, product branding, and <https://592industries.com> |
 | Account-free does not mean data-free | The policy lists uploads, metadata, generated results, session identifiers, and technical data | New-analysis flow, session routes, record schema, and provider boundary |
+| Browser normalization is processing | Privacy documentation states that HEIC conversion, resizing, and compression occur on the device before upload | `src/lib/image-normalization.ts`, new-analysis page |
 | No requested identity profile | The policy says H.A.N.D has no fields for name, email, phone, profile, password, or payment details | Route and form inventory; auth UI and routes are absent |
 | Incidental personal information | Notes may still contain personal, academic, confidential, or third-party content | Users control image and reference contents; the app cannot reliably classify all sensitive material before processing |
 | Session cookie | The cookie is called essential and its verified security attributes are listed | `src/server/session-routes.ts` |

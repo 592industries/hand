@@ -24,7 +24,7 @@ Otherwise, coverage and agreement are renormalized to `0.40 / 0.75` and `0.35 / 
 
 ## Findings and evidence
 
-Findings cover omissions, discrepancies, unsupported additions, correctly represented concepts, and uncertain comparisons requiring human review. Each substantive finding carries reference evidence. Application code normalizes and checks that evidence; weak findings are removed from definitive groups and moved to human review.
+Findings cover omissions, discrepancies, unsupported additions, correctly represented concepts, and uncertain comparisons requiring human review. Each substantive finding carries reference evidence. Application code normalizes and checks that evidence; weak findings are removed from definitive groups and moved to human review. All finding groups start collapsed so severity does not force content open; native disclosure controls preserve keyboard access and expose the group count.
 
 ## Stale state
 

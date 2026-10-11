@@ -11,6 +11,7 @@
 | Evidence validation | Application checks that a finding's reference evidence is supported by normalized reference text |
 | Idempotency | Returning the same result for a retried logical request instead of repeating paid work |
 | Legibility | Model classification of the visible handwriting as high, medium, or low readability |
+| Normalized image | A validated JPEG, PNG, or WebP file retained as-is or produced in the browser from HEIC or an oversized source before upload |
 | Original transcription | The first structured transcription returned by the model and preserved after edits |
 | Reference material | Optional user-supplied text used as the basis for comparison |
 | Reference suitability | Whether the reference is substantial and related enough to justify scoring |
@@ -19,6 +20,7 @@
 | Stale comparison | A saved comparison that no longer matches the edited transcription |
 | Technical fidelity | The scoring dimension for equations, formulas, notation, and precision-sensitive details |
 | Temporary session | The account-free browser workspace selected by a random secure cookie and subject to inactivity cleanup |
+| Generation guard | A per-room counter checked before background saves so work from a cleared session cannot restore deleted data |
 | Transcription | Structured text derived from visible handwritten-note evidence |
 | Uncertainty | A passage the model cannot read confidently, with a reason and possible alternatives |
 | Unsupported addition | A substantive statement in the notes that the supplied reference does not support |

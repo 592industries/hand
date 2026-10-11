@@ -8,17 +8,18 @@
 2. Drop note images into the upload area or select it to choose **Upload files** or **Take photo**.
 3. Add a title. Subject and topic are optional.
 4. Optionally paste reference material or upload a `.txt`, `.md`, or `.markdown` file.
-5. Select **Start analysis** and keep the page open while processing finishes.
+5. Select **Start analysis**. The progress view reports preparation, transcription, comparison, and finalization while the session-backed job runs.
 
 ### Image requirements
 
-- JPG, PNG, or WebP.
+- HEIC, JPEG, PNG, or WebP source files.
 - Up to six images.
-- Up to 4 MB each and 14 MB combined.
-- Width and height between 64 and 12,000 pixels.
+- Up to 8 MB per normalized image and 30 MB combined.
+- Source files can be up to 40 MB; oversized images are resized or compressed in the browser, with PNG preferred when it preserves text detail efficiently.
+- Normalized width and height are at least 64 pixels; processing limits oversized or extreme source dimensions.
 - The file content must match its declared image type.
 
-The browser checks these rules first. The server repeats the security-relevant checks.
+The browser verifies and decodes the source, converts HEIC, and creates AI-compatible JPEG or PNG data when needed. The server repeats the security-relevant checks, parses the normalized image header, and confirms that its actual dimensions match the request metadata.
 
 ### Reference requirements
 
@@ -26,7 +27,7 @@ Reference material is optional. A file can be plain text or Markdown and no larg
 
 ## Read the result
 
-The review page includes an editable transcription, equations, uncertain passages, source-page previews, and comparison evidence when a suitable reference exists. Findings are grouped as omissions, discrepancies, unsupported additions, correctly represented concepts, and items needing human review.
+The review page includes an editable transcription, equations, uncertain passages, source-page previews, and comparison evidence when a suitable reference exists. Findings are grouped as omissions, discrepancies, unsupported additions, correctly represented concepts, and items needing human review. Every findings section starts collapsed; expand only the section or evidence item you want to inspect. Transcription headings, paragraphs, and nested lists use the same interface typeface with consistent spacing.
 
 Always compare important output with the source image.
 
@@ -46,7 +47,7 @@ Use the moon or sun button to switch themes. The choice is stored locally. In Se
 
 | Situation | What to do |
 |---|---|
-| Image rejected | Use a supported image, reduce its size, or check that its content matches the type |
+| Image rejected | Use HEIC, JPEG, PNG, or WebP; check that the content matches the type and that the source is no larger than 40 MB |
 | Reference rejected | Use text or Markdown under 1 MB |
 | AI request limit | Wait a few minutes before another analysis or rerun |
 | Session analysis limit | Delete an existing analysis |

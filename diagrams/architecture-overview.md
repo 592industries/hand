@@ -4,7 +4,7 @@
 flowchart LR
     subgraph Client["Browser"]
         Routes["React routes"]
-        Upload["Upload validation"]
+        Upload["HEIC conversion and image normalization"]
         Review["Review, library, and export"]
         Theme["Theme preference"]
     end
@@ -19,7 +19,7 @@ flowchart LR
     subgraph Room["Per-session Durable Object"]
         Records["Analysis records"]
         Images["Chunked source images"]
-        Controls["Limits, idempotency, activity"]
+        Controls["Limits, idempotency, activity, storage lock"]
         Alarm["Cleanup alarm"]
     end
 
@@ -35,6 +35,7 @@ flowchart LR
     SessionRoutes --> Images
     SessionRoutes --> Controls
     Controls --> Alarm
+    Alarm --> Guard["Generation guard against stale writes"]
     SessionRoutes --> Analysis
     Analysis --> Proxy
     Proxy --> Model

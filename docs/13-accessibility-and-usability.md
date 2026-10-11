@@ -22,7 +22,11 @@
 
 ### Input alternatives
 
-Users can drag images, choose files, or open the device camera. Camera use is optional and restricted to the same origin through the Permissions Policy. Reference content can be pasted or selected as a text/Markdown file.
+Users can drag HEIC/JPEG/PNG/WebP images, choose files, or open the device camera. Camera use is optional and restricted to the same origin through the Permissions Policy. A busy state announces browser image optimization and disables analysis until it completes. Reference content can be pasted or selected as a text/Markdown file.
+
+### Review readability
+
+Finding and uncertainty disclosures start collapsed and use native `details`/`summary` keyboard behavior. Counts stay visible before expansion. Transcription content uses the application typeface with consistent line height, paragraph rhythm, heading levels, and nested-list indentation; equations and source annotations retain their separate technical presentation.
 
 ### Motion and display
 
@@ -47,6 +51,6 @@ No WCAG level or legal accessibility compliance is claimed. A formal audit shoul
 
 ## Usability principles
 
-The v2.1 interface uses short formal labels, keeps technical limits near upload controls, separates creation into four steps, places source and comparison evidence in one review workspace, and keeps privacy controls in Settings and the shared footer.
+The v2.2.1 interface uses short formal labels, keeps technical limits near upload controls, separates creation into four steps, places source and comparison evidence in one review workspace, and keeps privacy controls in Settings and the shared footer.
 
 [User Guide](02-user-guide.md) · [Verification](09-verification-validation.md)

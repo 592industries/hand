@@ -4,7 +4,8 @@
 flowchart TB
     subgraph Device["User device"]
         Files["Original note files"]
-        Preview["Temporary previews"]
+        Normalize["Temporary decode and normalization"]
+        Preview["Normalized temporary previews"]
         Preference["Theme preference"]
         Export["Downloaded exports"]
     end
@@ -22,8 +23,9 @@ flowchart TB
         Logs["Possible network, safety, and operational records"]
     end
 
-    Files --> Preview
-    Files --> Router
+    Files --> Normalize
+    Normalize --> Preview
+    Normalize --> Router
     Cookie --> Router
     Router --> RoomA
     Router -.->|different cookie| RoomB
@@ -33,6 +35,6 @@ flowchart TB
     RoomA --> Export
 ```
 
-Application cleanup deletes the selected room's records. It does not delete user exports or prove deletion from provider-controlled records. Session A cannot select Session B using an analysis id alone.
+Application cleanup serializes deletion of the selected room's records and prevents older background work from recreating them. It does not delete user exports or prove deletion from provider-controlled records. Session A cannot select Session B using an analysis id alone.
 
 [Data Inventory](../docs/DATA_INVENTORY.md) · [Privacy and Security Review](../docs/PRIVACY_SECURITY_REVIEW.md) · [Documentation home](../README.md)

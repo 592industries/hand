@@ -26,6 +26,7 @@ Handwritten notes are difficult to search, revise, reuse, and compare. General O
 | Reference comparison | Compares the transcription with material supplied by the user |
 | Scoring | Combines validated dimension scores using application-owned weights |
 | Review | Lets the user correct text while preserving the original AI output |
+| Upload preparation | Converts HEIC and optimizes large phone photos in the browser before transmission |
 | Session library | Searches, filters, sorts, reopens, exports, and deletes current-session analyses |
 
 ## Important distinctions
@@ -42,6 +43,7 @@ H.A.N.D owns the browser interface, validation rules, prompt instructions, schem
 - Keep provider credentials and AI requests on the server.
 - Isolate each anonymous session.
 - Make comparison evidence inspectable.
+- Keep findings closed until the user chooses a section, and keep transcription layout legible.
 - Provide short, direct controls on mobile and desktop.
 - Explain privacy and AI limits accurately.
 

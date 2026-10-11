@@ -26,7 +26,8 @@ Unknown `/api` routes return 404 instead of the SPA shell.
 
 - WebSocket upgrades and non-read methods require same-origin evidence.
 - POST/PATCH requests require `application/json`.
-- Declared and actual request bodies are capped at 20 MB.
+- Declared and actual request bodies are capped at 42 MB, leaving room for base64 overhead above the 30 MB normalized image total.
+- Normalized image data is limited to six files, 8 MB each, 30 MB combined; signatures, decoded byte lengths, and header-derived dimensions must match metadata.
 - The session cookie must match the expected 43-character base64url shape.
 - Analysis and rerun operations are limited and idempotent.
 
@@ -58,7 +59,7 @@ Synthetic example, shortened for readability:
 }
 ```
 
-The matching `Idempotency-Key` header must contain the same request UUID.
+The matching `Idempotency-Key` header must contain the same request UUID. HEIC is a browser input format, not a stored API MIME type: it is converted before this request, so the API accepts normalized `image/jpeg`, `image/png`, or `image/webp` data only.
 
 ## Stored analysis contract
 
