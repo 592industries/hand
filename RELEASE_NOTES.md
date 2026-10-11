@@ -1,3 +1,21 @@
+# H.A.N.D v2.2.2
+
+H.A.N.D v2.2.2 improves startup speed and reliability on iPhone and other mobile devices.
+
+## Highlights
+
+- Shows a lightweight branded loading state before JavaScript is ready and mounts client routes immediately.
+- Targets Safari 15 and newer while separating optional UI code from the initial application bundle.
+- Caches hashed production assets for repeat visits and keeps full-height layouts within the visible mobile viewport.
+- Pauses the session connection while a phone is offline or backgrounded and uses bounded retry backoff after failures.
+- Adds iPhone safe-area spacing and a phone-width regression check.
+
+## Compatibility
+
+No storage migration, environment variable, API, scoring, or provider change is required.
+
+---
+
 # H.A.N.D v2.2.1
 
 H.A.N.D v2.2.1 refines review readability and makes phone-photo uploads safer and more reliable.

@@ -4,6 +4,22 @@ type ApiResult<T> = { success: true; data: T } | { success: false; error: string
 
 let bootstrapPromise: Promise<void> | null = null
 
+async function bootstrapSession(): Promise<void> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 12_000)
+  try {
+    await parse<unknown>(await fetch('/api/session', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+      signal: controller.signal,
+    }))
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
 async function parse<T>(response: Response): Promise<T> {
   const result = await response.json() as ApiResult<T>
   if (!response.ok || !result.success) throw new Error(result.success ? 'Request failed' : result.error)
@@ -11,12 +27,7 @@ async function parse<T>(response: Response): Promise<T> {
 }
 
 export function ensureSession(): Promise<void> {
-  bootstrapPromise ??= fetch('/api/session', {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: '{}',
-  }).then((response) => parse<unknown>(response)).then(() => undefined).catch((error) => {
+  bootstrapPromise ??= bootstrapSession().catch((error) => {
     bootstrapPromise = null
     throw error
   })
@@ -48,31 +59,86 @@ export const sessionApi = {
   },
 }
 
+export function sessionReconnectDelay(attempt: number): number {
+  return Math.min(1_000 * 2 ** Math.max(0, attempt), 30_000)
+}
+
 export async function openSessionConnection(): Promise<() => void> {
   await ensureSession()
   let stopped = false
   let socket: WebSocket | null = null
   let reconnect: number | undefined
   let ping: number | undefined
+  let attempt = 0
 
-  const connect = () => {
-    if (stopped) return
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    socket = new WebSocket(`${protocol}//${location.host}/api/session/connect`)
-    socket.onopen = () => {
-      ping = window.setInterval(() => socket?.readyState === WebSocket.OPEN && socket.send('ping'), 60_000)
-    }
-    socket.onclose = () => {
-      if (ping) window.clearInterval(ping)
-      if (!stopped) reconnect = window.setTimeout(connect, 2_000)
+  const available = () => document.visibilityState !== 'hidden' && navigator.onLine !== false
+  const clearPing = () => {
+    if (ping !== undefined) window.clearInterval(ping)
+    ping = undefined
+  }
+  const clearReconnect = () => {
+    if (reconnect !== undefined) window.clearTimeout(reconnect)
+    reconnect = undefined
+  }
+  const closeSocket = () => {
+    const current = socket
+    socket = null
+    clearPing()
+    if (current) {
+      current.onclose = null
+      current.close(1000, 'connection paused')
     }
   }
+
+  const schedule = () => {
+    if (stopped || !available() || reconnect !== undefined) return
+    reconnect = window.setTimeout(() => {
+      reconnect = undefined
+      connect()
+    }, sessionReconnectDelay(attempt++))
+  }
+
+  const connect = () => {
+    if (stopped || !available() || socket?.readyState === WebSocket.CONNECTING || socket?.readyState === WebSocket.OPEN) return
+    clearReconnect()
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    try {
+      socket = new WebSocket(`${protocol}//${location.host}/api/session/connect`)
+    } catch {
+      schedule()
+      return
+    }
+    const current = socket
+    current.onopen = () => {
+      if (socket !== current) return
+      attempt = 0
+      clearPing()
+      ping = window.setInterval(() => current.readyState === WebSocket.OPEN && current.send('ping'), 60_000)
+    }
+    current.onclose = () => {
+      if (socket === current) socket = null
+      clearPing()
+      schedule()
+    }
+  }
+
+  const onVisibilityChange = () => available() ? connect() : closeSocket()
+  const onOnline = () => connect()
+  const onOffline = () => {
+    clearReconnect()
+    closeSocket()
+  }
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('online', onOnline)
+  window.addEventListener('offline', onOffline)
   connect()
 
   return () => {
     stopped = true
-    if (reconnect) window.clearTimeout(reconnect)
-    if (ping) window.clearInterval(ping)
-    socket?.close(1000, 'page closed')
+    clearReconnect()
+    closeSocket()
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    window.removeEventListener('online', onOnline)
+    window.removeEventListener('offline', onOffline)
   }
 }

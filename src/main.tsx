@@ -10,12 +10,20 @@ async function main() {
   const root = document.getElementById('root')!
   const router = createBrowserRouter(routes)
   installStaleChunkRecovery(router)
+  const app = <RouterProvider router={router} />
+  const prerendered = root.dataset.prerendered === window.location.pathname
 
-  // Let the router finish loading the first route's code-split module before
-  // rendering. Until then it renders only a loading fallback — and on a page
-  // prerender.ts wrote at build (the landing), React must hydrate the
-  // HTML already on screen with the real page, or it discards that markup and
-  // repaints.
+  // Client-only routes start rendering immediately. This lets React Router's
+  // fallback replace the static loading shell while the lazy route downloads;
+  // waiting here left mobile visitors staring at a blank page on slow starts.
+  if (!prerendered) {
+    root.replaceChildren()
+    createRoot(root).render(app)
+    return
+  }
+
+  // Prerendered pages already show useful HTML. Wait for their lazy module so
+  // React hydrates that exact markup instead of replacing it with a fallback.
   if (!router.state.initialized) {
     await new Promise<void>((done) => {
       const stop = router.subscribe((state) => {
@@ -27,10 +35,7 @@ async function main() {
     })
   }
 
-  const app = <RouterProvider router={router} />
-  // A prerendered page marks the route it holds; everything else (client routes
-  // are served the empty shell) renders from scratch.
-  if (root.dataset.prerendered === window.location.pathname && !router.state.errors) {
+  if (!router.state.errors) {
     hydrateRoot(root, app, {
       // React recovers from a mismatch by repainting from scratch, so the page
       // still works — but the visitor saw a flicker and the cause is invisible

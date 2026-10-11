@@ -2,7 +2,7 @@
  * Build-time prerender of the public pages (the approach deep.space uses).
  *
  * A DeepSpace app is a client-rendered SPA: `dist/client/index.html` is an
- * empty `<div id="root">`, so a crawler that does not run JavaScript (Bing,
+ * a minimal loading shell, so a crawler that does not run JavaScript (Bing,
  * link unfurlers, every AI answer engine) reads a blank page with a bare
  * title. After `vite build` writes the client bundle, this plugin renders the
  * pages listed in src/prerender-entry.tsx with react-dom/server and writes:
@@ -13,7 +13,7 @@
  *     Cloudflare's default `html_handling: auto-trailing-slash`, which serves
  *     about.html at /about (200) — a nested file would 307 /about → /about/
  *     and contradict the page's canonical URL.
- *   - `_spa.html`, the untouched empty shell. src/server/http-routes.ts serves
+ *   - `_spa.html`, the untouched loading shell. src/server/http-routes.ts serves
  *     it for client routes (/home, /settings, …) so a refresh there never
  *     paints the landing page or hands crawlers the `/` canonical.
  *   - `sitemap.xml`, and the `Sitemap:` line appended to public/robots.txt's
@@ -34,7 +34,7 @@ import react from '@vitejs/plugin-react'
 const appDir = fileURLToPath(new URL('.', import.meta.url))
 const ENTRY = 'src/prerender-entry.tsx'
 const SHELL_FILE = '_spa.html'
-const ROOT_PLACEHOLDER = '<div id="root"></div>'
+const ROOT_PLACEHOLDER = '<div id="root"><div data-initial-loader role="status" aria-live="polite"><img src="/brand/hand-mark-v1-64.png" width="48" height="48" alt="" /><span>Opening H.A.N.D…</span></div></div>'
 /** src/pages/_app.tsx's root element; React 19 puts hoisted head tags before it. */
 const BODY_ANCHOR = '<div data-testid="app-root"'
 /** Re-entrancy guard: the nested SSR build must not run this plugin again. */
@@ -87,7 +87,7 @@ export function prerender(): Plugin {
       const templatePath = join(clientDir, 'index.html')
       const template = readFileSync(templatePath, 'utf8')
       if (!template.includes(ROOT_PLACEHOLDER)) {
-        throw new Error(`[prerender] dist/client/index.html has no '${ROOT_PLACEHOLDER}' to fill — keep the scaffold's empty root container.`)
+        throw new Error('[prerender] dist/client/index.html has no expected loading shell to fill — keep the scaffold root container unchanged.')
       }
 
       // 1. Isolated SSR pass with the same defines (app id, site origin) and

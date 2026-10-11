@@ -12,6 +12,14 @@ test.describe('workspace', () => {
     expect(errors).toEqual([])
   })
 
+  test('home fits a phone viewport and exposes mobile navigation', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/home')
+    await expect(page.getByRole('heading', { name: 'Your notes, ready to review' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Toggle menu' })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  })
+
   test('upload area offers files or camera', async ({ page }) => {
     await page.goto('/new')
     await expect(page.locator('input[type="file"][multiple]')).toHaveAttribute('accept', /\.heic/)
