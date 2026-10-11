@@ -21,12 +21,22 @@ import { renderToString } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import * as app from './pages/_app'
 import Landing from './pages/index'
+import AcceptableUse from './pages/acceptable-use'
+import AiDisclaimer from './pages/ai-disclaimer'
+import Cookies from './pages/cookies'
+import Privacy from './pages/privacy'
+import Terms from './pages/terms'
 
 // prerender.ts reads `origin` (canonical URLs, sitemap) and `noindex` from here.
 export { seo } from './seo'
 
 export const PAGES: Record<string, ComponentType> = {
   '/': Landing,
+  '/privacy': Privacy,
+  '/terms': Terms,
+  '/acceptable-use': AcceptableUse,
+  '/cookies': Cookies,
+  '/ai-disclaimer': AiDisclaimer,
 }
 
 export const PRERENDER_ROUTES = Object.keys(PAGES)

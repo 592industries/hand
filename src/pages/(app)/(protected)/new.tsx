@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, FileText, Files, LockKeyhole, Sparkles, Trash2, UploadCloud } from 'lucide-react'
+import { Camera, FileText, Files, Sparkles, Trash2, UploadCloud } from 'lucide-react'
 import { PageHeader, PageShell, StepHeading } from '../../../components/AppShell'
 import { Button, Input, Label, Modal, Textarea } from '../../../components/ui'
 import { sessionApi } from '../../../lib/session'
@@ -93,7 +93,7 @@ export default function NewAnalysisPage() {
     setBusy(true)
     setFormError('')
     try {
-      setStage('Securing your images in this temporary session…')
+      setStage('Preparing your images…')
       const imageFiles: ImageFile[] = images.map((image, index) => ({ key: String(index), name: image.file.name, mimeType: image.file.type as ImageFile['mimeType'], size: image.file.size, width: image.width, height: image.height }))
       setStage(referenceText.trim() ? 'Transcribing and comparing evidence…' : 'Transcribing your handwriting…')
       const result = await sessionApi.analyze({
@@ -115,16 +115,16 @@ export default function NewAnalysisPage() {
     if (!busy) void addFiles(Array.from(event.dataTransfer.files))
   }
 
-  if (busy) return <PageShell width="max-w-4xl"><section aria-live="polite" className="rounded-xl border border-border bg-card px-6 py-20 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"><Sparkles className="animate-pulse" /></span><h1 className="mt-6 text-2xl font-bold">H.A.N.D is reading your notes</h1><p className="mt-2 text-muted-foreground">{stage}</p><p className="mt-5 text-xs text-muted-foreground">Keep this page open while the analysis completes.</p></section></PageShell>
+  if (busy) return <PageShell width="max-w-4xl"><section aria-live="polite" className="rounded-xl border border-border bg-card px-6 py-20 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"><Sparkles className="animate-pulse" /></span><h1 className="mt-6 text-2xl font-bold">Analyzing your notes</h1><p className="mt-2 text-muted-foreground">{stage}</p><p className="mt-5 text-xs text-muted-foreground">Keep this page open.</p></section></PageShell>
 
   return <PageShell width="max-w-5xl">
-    <PageHeader eyebrow="New analysis" title="Bring your notes into focus" description="Add up to six clear photos or scans. A reference is optional; without one, H.A.N.D transcribes and organizes your notes without creating an accuracy score." />
+    <PageHeader eyebrow="New analysis" title="Analyze handwritten notes" description="Upload your notes. Add a reference if you want a comparison." />
 
     <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
-        <StepHeading number="01" title="Add handwritten pages" description="JPG, PNG, or WebP · 4 MB each · 14 MB total · up to 6 pages" />
+        <StepHeading number="01" title="Pages" description="JPG, PNG, or WebP · 4 MB each · 14 MB total · up to 6" />
         <div>
-          <div role="button" tabIndex={0} aria-label="Drop note images here; upload files or take a photo" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setShowSourceOptions(true) } }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => setShowSourceOptions(true)} className="cursor-pointer rounded-xl border border-dashed border-input bg-background/55 px-5 py-9 text-center transition-colors hover:border-primary"><UploadCloud className="mx-auto text-primary" /><p className="mt-3 font-semibold">Drop note images here</p><p className="mt-1 text-sm text-muted-foreground">or choose upload or camera</p></div>
+          <div role="button" tabIndex={0} aria-label="Drop note images here; upload files or take a photo" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setShowSourceOptions(true) } }} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onClick={() => setShowSourceOptions(true)} className="cursor-pointer rounded-xl border border-dashed border-input bg-background/55 px-5 py-9 text-center transition-colors hover:border-primary"><UploadCloud className="mx-auto text-primary" /><p className="mt-3 font-semibold">Drop note images here</p><p className="mt-1 text-sm text-muted-foreground">Upload files or take a photo</p></div>
           <input ref={inputRef} className="sr-only" type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
           <input ref={cameraRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(event) => { setShowSourceOptions(false); void addFiles(Array.from(event.target.files ?? [])); event.target.value = '' }} />
           {imageError && <p role="alert" className="mt-3 text-sm text-destructive">{imageError}</p>}
@@ -133,25 +133,25 @@ export default function NewAnalysisPage() {
       </section>
 
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
-        <StepHeading number="02" title="Name the analysis" description="A title is required. Subject and topic make session search easier." />
+        <StepHeading number="02" title="Details" />
         <div className="grid gap-4 sm:grid-cols-2"><div className="sm:col-span-2"><Label htmlFor="title">Title <span aria-hidden="true" className="text-destructive">*</span></Label><Input id="title" className="mt-1.5" value={title} onChange={(event) => { setTitle(event.target.value); if (event.target.value.trim()) setTitleError('') }} aria-invalid={Boolean(titleError)} aria-describedby={titleError ? 'title-error' : undefined} maxLength={140} placeholder="e.g. Calculus lecture 7" />{titleError && <p id="title-error" role="alert" className="mt-2 text-sm text-destructive">{titleError}</p>}</div><div><Label htmlFor="subject">Subject <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="subject" className="mt-1.5" value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={100} placeholder="e.g. Mathematics" /></div><div><Label htmlFor="topic">Topic <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="topic" className="mt-1.5" value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={140} placeholder="e.g. Integration by parts" /></div></div>
       </section>
 
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
-        <StepHeading number="03" title="Add a reference" description="Optional source material enables a correspondence score and evidence review." />
+        <StepHeading number="03" title="Reference" description="Optional · text or Markdown · 1 MB max" />
         <div><Textarea className="min-h-44 resize-y" value={referenceText} onChange={(event) => { setReferenceText(event.target.value); if (!event.target.value) setReferenceFileName('') }} placeholder="Paste reference material…" maxLength={120000} /><div className="mt-3 flex flex-wrap items-center gap-3"><label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm font-semibold hover:bg-accent"><FileText size={15} /> Upload .txt or .md<input type="file" className="sr-only" accept=".txt,.md,.markdown,text/plain,text/markdown" onChange={(event) => void readReference(event.target.files?.[0])} /></label>{referenceFileName && <span className="text-xs text-muted-foreground">Loaded {referenceFileName}</span>}</div>{referenceError && <p role="alert" className="mt-3 text-sm text-destructive">{referenceError}</p>}</div>
       </section>
 
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
-        <StepHeading number="04" title="Start analysis" description="Your upload and results remain isolated to this temporary session." />
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"><p className="flex max-w-lg items-start gap-2 text-sm leading-6 text-muted-foreground"><LockKeyhole size={17} className="mt-1 shrink-0 text-primary" /> Original model output stays separate from later corrections. Editing scored text marks the comparison stale until you rerun it.</p><Button size="lg" onClick={() => void start()}><Sparkles /> Start analysis</Button></div>
+        <StepHeading number="04" title="Analyze" />
+        <div className="flex justify-end"><Button size="lg" onClick={() => void start()}><Sparkles /> Start analysis</Button></div>
       </section>
     </div>
 
     {formError && <div role="alert" className="mt-5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{formError}</div>}
 
     <Modal open={showSourceOptions} onClose={() => setShowSourceOptions(false)} size="sm">
-      <Modal.Header><Modal.Title>Add note images</Modal.Title><Modal.Description>Choose existing images or use your device camera.</Modal.Description></Modal.Header>
+      <Modal.Header><Modal.Title>Add note images</Modal.Title></Modal.Header>
       <Modal.Body className="grid gap-3 sm:grid-cols-2"><Button variant="outline" className="h-24 flex-col" onClick={() => inputRef.current?.click()}><Files /> Upload files</Button><Button className="h-24 flex-col" onClick={() => cameraRef.current?.click()}><Camera /> Take photo</Button></Modal.Body>
     </Modal>
   </PageShell>

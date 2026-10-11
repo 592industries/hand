@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Navigation from '../../components/Navigation'
+import { Footer } from '../../components/Footer'
 import { APP_NAME } from '../../constants'
 import { openSessionConnection } from '../../lib/session'
 
@@ -21,6 +22,7 @@ export default function AppLayout() {
             <Outlet />
           </Suspense>
         </main>
+        <Footer />
       </div>
     </>
   )

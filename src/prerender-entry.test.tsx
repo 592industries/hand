@@ -19,4 +19,15 @@ describe('public pages prerender', () => {
     // without a browser would ship an empty static page.
     expect(html.slice(at)).toMatch(/<(h1|h2|p|main|section|article|a)\b/)
   })
+
+  it('publishes verified policy contact and qualified retention wording', () => {
+    const pages = ['/privacy', '/terms', '/acceptable-use', '/cookies', '/ai-disclaimer'].map(render).join('\n')
+    expect(pages).toContain('https://592industries.com/contact')
+    expect(pages).toContain('+1 (516) 336-9270')
+    expect(pages).not.toMatch(/example\.com|TODO|TBD|guaranteed deletion/i)
+
+    const privacy = render('/privacy')
+    expect(privacy).toContain('schedules cleanup after 30 minutes')
+    expect(privacy).toContain('does not guarantee immediate deletion')
+  })
 })

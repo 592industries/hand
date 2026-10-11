@@ -19,7 +19,7 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow: s
   </header>
 }
 
-export function StepHeading({ number, title, description }: { number: string; title: string; description: string }) {
-  return <div className="flex gap-4"><span className="mt-0.5 text-xs font-bold tracking-[0.16em] text-primary">{number}</span><div><h2 className="font-bold">{title}</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p></div></div>
+export function StepHeading({ number, title, description }: { number: string; title: string; description?: string }) {
+  return <div className="flex gap-4"><span className="mt-0.5 text-xs font-bold tracking-[0.16em] text-primary">{number}</span><div><h2 className="font-bold">{title}</h2>{description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}</div></div>
 }
 
