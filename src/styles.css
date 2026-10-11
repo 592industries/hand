@@ -197,38 +197,25 @@
     color: var(--color-primary-foreground);
   }
 
-  /*
-   * Focus indication is intentionally NOT applied app-wide via a
-   * `*:focus-visible` rule. Doing so paints a colored outline onto
-   * every focusable element on the page — including programmatically
-   * focusable containers like Radix DismissableLayer wrappers,
-   * dialog overlays, and any element with `tabindex={-1}` used for
-   * scroll containment. The result reads as "the entire panel /
-   * dialog is selected" the moment a child button is clicked.
-   *
-   * Per-component focus indicators (e.g. shadcn's
-   * `focus-visible:ring-1` on Button, `focus-visible:border-ring` on
-   * Input / Textarea / Select) are sufficient for keyboard
-   * accessibility and don't bleed onto containers.
-   *
-   * If you DO need a global indicator for very keyboard-heavy apps,
-   * scope it tightly — e.g. only to interactive elements:
-   *
-   *   a:focus-visible,
-   *   button:focus-visible,
-   *   [role="button"]:focus-visible,
-   *   input:focus-visible,
-   *   select:focus-visible,
-   *   textarea:focus-visible {
-   *     outline: 2px solid var(--color-primary);
-   *     outline-offset: 2px;
-   *   }
-   *
-   * — never `*`.
-   */
-
   /* Prevent 300ms tap delay on mobile */
   a, button, [role="button"], input, select, textarea {
     touch-action: manipulation;
+  }
+
+  /* Keep custom links and drop zones visible to keyboard users. Form
+     primitives provide their own focused rings. */
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body, #root { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

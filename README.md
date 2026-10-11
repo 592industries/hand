@@ -1,4 +1,4 @@
-# H.A.N.D.
+# H.A.N.D
 
 Handwritten Analysis & Note Digitization is a DeepSpace-native application for transcribing academic notes and, when a reference is supplied, evaluating their semantic correspondence with transparent evidence and deterministic scoring.
 

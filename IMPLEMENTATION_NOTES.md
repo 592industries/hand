@@ -1,6 +1,6 @@
-# H.A.N.D. v1.0 architecture
+# H.A.N.D v2.0 architecture
 
-H.A.N.D. is public and account-free. The browser receives a random opaque cookie; no name,
+H.A.N.D is public and account-free. The browser receives a random opaque cookie; no name,
 email, account, or recoverable identity is created.
 
 Each cookie maps to one SQLite-backed `HandSessionRoom`. The room stores validated image chunks,

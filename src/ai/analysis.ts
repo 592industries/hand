@@ -16,7 +16,7 @@ export const MODEL_PROVIDER = 'anthropic'
 export const MODEL_ID = 'claude-sonnet-5'
 export const PROMPT_VERSION = 'hand-v1.0.0'
 
-const SYSTEM_RULES = `You are H.A.N.D., a careful academic handwriting transcription system.
+const SYSTEM_RULES = `You are H.A.N.D, a careful academic handwriting transcription system.
 Transcribe only visible evidence. Preserve operators, signs, grouping, fractions, subscripts,
 superscripts, scientific notation, headings, lists, and tables. Never fill illegible gaps with
 plausible content. Mark uncertainty explicitly and distinguish raw notation from interpretation.
