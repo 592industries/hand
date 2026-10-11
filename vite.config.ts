@@ -13,7 +13,7 @@ export default defineConfig({
   build: {
     // Keep third-party libraries out of the application entry chunk. Besides
     // eliminating Vite's 500 kB warning, this gives browsers a stable vendor
-    // asset to cache independently from H.A.N.D. releases.
+    // asset to cache independently from H.A.N.D releases.
     rolldownOptions: {
       output: {
         codeSplitting: {

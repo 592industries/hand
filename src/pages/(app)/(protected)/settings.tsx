@@ -1,29 +1,38 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Bot, Clock3, Database, LockKeyhole } from 'lucide-react'
-import { Eyebrow, PageShell, Panel } from '../../../components/AppShell'
-import { Button } from '../../../components/ui'
+import { ShieldAlert } from 'lucide-react'
+import { PageShell } from '../../../components/AppShell'
+import { Button, ConfirmModal } from '../../../components/ui'
 import { sessionApi } from '../../../lib/session'
 
 export default function SettingsPage() {
-  const navigate = useNavigate()
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
 
   async function clear() {
-    if (!window.confirm('Clear every upload and analysis in this session now?')) return
     setBusy(true)
-    await sessionApi.clear()
-    navigate('/new', { replace: true })
+    setError('')
+    setNotice('')
+    try {
+      await sessionApi.clear()
+      setConfirmOpen(false)
+      setNotice('Session data cleared. Your temporary workspace is now empty.')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Session data could not be cleared. Try again.')
+    } finally { setBusy(false) }
   }
 
-  return <PageShell width="max-w-4xl">
-    <Eyebrow>Privacy</Eyebrow><h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Session & privacy</h1><p className="mt-2 text-muted-foreground">H.A.N.D. works without accounts or personal profiles.</p>
-    <div className="mt-8 grid gap-5 md:grid-cols-2">
-      <Panel><LockKeyhole className="text-primary" /><h2 className="mt-4 font-bold">No account data</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">There is no sign-up, login, name, email, or user profile. A random HttpOnly cookie only connects this browser to its temporary workspace.</p></Panel>
-      <Panel><Clock3 className="text-primary" /><h2 className="mt-4 font-bold">30-minute cleanup</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Uploads and results are deleted 30 minutes after the last browser connection closes. Reconnecting before then keeps the session available.</p></Panel>
-      <Panel><Bot className="text-primary" /><h2 className="mt-4 font-bold">Protected AI access</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">AI calls run only through the server, with schema validation, per-session rate limits, request-size limits, and idempotency protection.</p></Panel>
-      <Panel><Database className="text-primary" /><h2 className="mt-4 font-bold">Temporary storage</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Images and analyses remain inside one isolated session Durable Object. Source images are never published through a public file URL.</p></Panel>
-    </div>
-    <Panel className="mt-5"><h2 className="font-bold">Clear this session now</h2><p className="mt-2 text-sm text-muted-foreground">Immediately remove all current uploads, transcriptions, comparisons, and recent items.</p><Button variant="destructive" className="mt-4" loading={busy} onClick={() => void clear()}>Clear session data</Button></Panel>
+  return <PageShell width="max-w-3xl">
+    <header className="border-b border-border pb-7"><h1 className="text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Settings</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">H.A.N.D is an account-free workspace where your uploaded files, transcripts, analyses, comparisons, and session history remain available temporarily. Your session data is automatically deleted 30 minutes after the last browser connection closes; use Clear Session Data below to erase the current session immediately.</p></header>
+
+    <section aria-labelledby="clear-session" className="mt-8 rounded-xl border border-destructive/30 bg-card p-5 sm:p-6">
+      <div className="flex gap-4"><ShieldAlert className="mt-0.5 shrink-0 text-destructive" size={20} /><div><h2 id="clear-session" className="font-bold">Clear Session Data</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Permanently delete every upload, transcript, comparison, and recent item in this session.</p><Button variant="destructive" className="mt-5" onClick={() => { setError(''); setNotice(''); setConfirmOpen(true) }}>Clear Session Data</Button></div></div>
+    </section>
+
+    {notice && <p role="status" className="mt-5 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-foreground">{notice}</p>}
+    {error && <div role="alert" className="mt-5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"><p>{error}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => setConfirmOpen(true)}>Try again</Button></div>}
+
+    <ConfirmModal open={confirmOpen} onClose={() => { if (!busy) setConfirmOpen(false) }} onConfirm={() => void clear()} title="Clear all session data?" description="This permanently deletes every upload and analysis in this session. This action cannot be undone." confirmText="Clear Session Data" loading={busy} />
   </PageShell>
 }

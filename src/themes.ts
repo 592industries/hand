@@ -20,12 +20,12 @@ export const THEMES = [
   {
     id: 'hand-paper',
     label: 'Paper',
-    description: 'Warm paper workspace.',
+    description: 'Bright, high-contrast workspace.',
   },
   {
     id: 'hand-ink',
     label: 'Ink',
-    description: 'Low-glare dark workspace.',
+    description: 'Low-glare technical workspace.',
   },
 ] as const
 

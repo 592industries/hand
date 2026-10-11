@@ -1,6 +1,6 @@
 # DeepSpace variables and bindings
 
-H.A.N.D. requires **no manually supplied provider API keys**. Anthropic access and billing are handled through DeepSpace's AI proxy.
+H.A.N.D requires **no manually supplied provider API keys**. Anthropic access and billing are handled through DeepSpace's AI proxy.
 
 ## Values you configure
 
@@ -19,7 +19,7 @@ DeepSpace application variable and not as a plain GitHub variable:
 
 | Name | Required | Purpose |
 |---|---:|---|
-| `DEEPSPACE_SESSION` | Yes | DeepSpace CLI session for an account that owns or can deploy H.A.N.D. Keep it secret and rotate it if exposed. |
+| `DEEPSPACE_SESSION` | Yes | DeepSpace CLI session for an account that owns or can deploy the H.A.N.D application. Keep it secret and rotate it if exposed. |
 
 The workflow validates the secret, writes it to the DeepSpace CLI's session file with owner-only
 permissions on the ephemeral runner, and verifies the account before testing or deployment.
@@ -52,5 +52,5 @@ Do not create or copy these yourself. They are platform bindings or credentials 
 | `DEEPSPACE_PORT` | `5173` in Playwright config | Optional local end-to-end test port override. |
 | `DEV` (`import.meta.env.DEV`) | Injected by Vite | Hides developer-only navigation outside development. This is a build flag, not a DeepSpace variable to add. |
 
-The DeepSpace CLI also recognizes service URL/session overrides such as `DEEPSPACE_DEPLOY_URL` and its own login credentials. H.A.N.D. application code does not read them. Do not add them unless DeepSpace support specifically directs you to a non-default control plane.
+The DeepSpace CLI also recognizes service URL/session overrides such as `DEEPSPACE_DEPLOY_URL` and its own login credentials. H.A.N.D application code does not read them. Do not add them unless DeepSpace support specifically directs you to a non-default control plane.
 
