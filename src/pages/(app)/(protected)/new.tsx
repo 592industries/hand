@@ -1,6 +1,7 @@
-import { useRef, useState, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, FileText, Files, Sparkles, Trash2, UploadCloud } from 'lucide-react'
+import { AnalysisProgress } from '../../../components/AnalysisProgress'
 import { PageHeader, PageShell, StepHeading } from '../../../components/AppShell'
 import { Button, Input, Label, Modal, Textarea } from '../../../components/ui'
 import { sessionApi } from '../../../lib/session'
@@ -45,6 +46,7 @@ export default function NewAnalysisPage() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
+  const imagesRef = useRef<PendingImage[]>([])
   const [images, setImages] = useState<PendingImage[]>([])
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
@@ -56,8 +58,11 @@ export default function NewAnalysisPage() {
   const [referenceError, setReferenceError] = useState('')
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [stage, setStage] = useState('')
+  const [startedAt, setStartedAt] = useState('')
   const [showSourceOptions, setShowSourceOptions] = useState(false)
+
+  useEffect(() => { imagesRef.current = images }, [images])
+  useEffect(() => () => imagesRef.current.forEach((image) => URL.revokeObjectURL(image.preview)), [])
 
   async function addFiles(files: File[]) {
     setImageError('')
@@ -87,15 +92,15 @@ export default function NewAnalysisPage() {
   }
 
   async function start() {
+    if (busy) return
     setImageError(images.length ? '' : 'Add at least one handwritten note image')
     setTitleError(title.trim() ? '' : 'Add a title for this analysis')
     if (!images.length || !title.trim()) return
     setBusy(true)
+    setStartedAt(new Date().toISOString())
     setFormError('')
     try {
-      setStage('Preparing your images…')
       const imageFiles: ImageFile[] = images.map((image, index) => ({ key: String(index), name: image.file.name, mimeType: image.file.type as ImageFile['mimeType'], size: image.file.size, width: image.width, height: image.height }))
-      setStage(referenceText.trim() ? 'Transcribing and comparing evidence…' : 'Transcribing your handwriting…')
       const result = await sessionApi.analyze({
         requestId: crypto.randomUUID(),
         title: title.trim(), subject: subject.trim(), topic: topic.trim(),
@@ -106,7 +111,6 @@ export default function NewAnalysisPage() {
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : 'Analysis could not be started')
       setBusy(false)
-      setStage('')
     }
   }
 
@@ -115,7 +119,7 @@ export default function NewAnalysisPage() {
     if (!busy) void addFiles(Array.from(event.dataTransfer.files))
   }
 
-  if (busy) return <PageShell width="max-w-4xl"><section aria-live="polite" className="rounded-xl border border-border bg-card px-6 py-20 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"><Sparkles className="animate-pulse" /></span><h1 className="mt-6 text-2xl font-bold">Analyzing your notes</h1><p className="mt-2 text-muted-foreground">{stage}</p><p className="mt-5 text-xs text-muted-foreground">Keep this page open.</p></section></PageShell>
+  if (busy) return <PageShell><AnalysisProgress title={title} fileName={images[0]?.file.name} pageCount={images.length} stage="preparing" startedAt={startedAt} hasReference={Boolean(referenceText.trim())} /></PageShell>
 
   return <PageShell width="max-w-5xl">
     <PageHeader eyebrow="New analysis" title="Analyze handwritten notes" description="Upload your notes. Add a reference if you want a comparison." />
@@ -144,7 +148,7 @@ export default function NewAnalysisPage() {
 
       <section className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[250px_1fr]">
         <StepHeading number="04" title="Analyze" />
-        <div className="flex justify-end"><Button size="lg" onClick={() => void start()}><Sparkles /> Start analysis</Button></div>
+        <div className="flex justify-end"><Button size="lg" onClick={() => void start()} loading={busy}><Sparkles /> Start analysis</Button></div>
       </section>
     </div>
 

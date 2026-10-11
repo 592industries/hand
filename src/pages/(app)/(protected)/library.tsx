@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { FileText, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { AnalysisRow } from '../../../components/AnalysisRow'
 import { PageHeader, PageShell, Panel } from '../../../components/AppShell'
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui'
+import { Button, EmptyState, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui'
 import { useSessionAnalyses } from '../../../hooks/useSessionAnalyses'
 
 export default function LibraryPage() {
+  const navigate = useNavigate()
   const { records, status, error } = useSessionAnalyses()
   const [search, setSearch] = useState('')
   const [subject, setSubject] = useState('all')
@@ -36,6 +37,6 @@ export default function LibraryPage() {
       <Select value={sort} onValueChange={(value) => value && setSort(value)}><SelectTrigger aria-label="Sort analyses"><SlidersHorizontal size={15} /><SelectValue /></SelectTrigger><SelectContent><SelectItem value="updated-desc">Recently updated</SelectItem><SelectItem value="created-desc">Newest created</SelectItem><SelectItem value="created-asc">Oldest created</SelectItem></SelectContent></Select>
     </div></Panel>
     <div className="mt-5 flex items-center justify-between text-sm text-muted-foreground"><span>{filtered.length} {filtered.length === 1 ? 'analysis' : 'analyses'}</span>{filteredActive && <button className="font-semibold text-primary hover:underline" onClick={clearFilters}>Clear filters</button>}</div>
-    <div className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">{status === 'loading' ? <p className="px-5 py-8 text-sm text-muted-foreground">Loading your library…</p> : error ? <div className="px-5 py-8"><p role="alert" className="text-sm text-destructive">{error}</p></div> : filtered.length ? filtered.map((record) => <AnalysisRow key={record.recordId} record={record} />) : records.length ? <div className="px-5 py-12 text-center"><p className="font-semibold">No matching analyses</p><p className="mt-1 text-sm text-muted-foreground">Try a different search or filter.</p><Button variant="outline" className="mt-4" onClick={clearFilters}>Clear filters</Button></div> : <div className="px-5 py-12 text-center"><p className="font-semibold">Your library is empty</p><p className="mt-1 text-sm text-muted-foreground">Completed analyses appear here for this session.</p><Link to="/new" className="mt-4 inline-flex font-semibold text-primary hover:underline">Start your first analysis</Link></div>}</div>
+    <div className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">{status === 'loading' ? <div aria-label="Loading analysis library" className="space-y-px">{[0, 1, 2, 3].map((item) => <div key={item} className="flex h-20 items-center gap-4 px-5"><span className="h-10 w-10 animate-pulse rounded-lg bg-muted" /><span className="h-4 flex-1 animate-pulse rounded bg-muted" /></div>)}</div> : error ? <div className="px-5 py-8"><p role="alert" className="text-sm text-destructive">{error}</p></div> : filtered.length ? filtered.map((record) => <AnalysisRow key={record.recordId} record={record} />) : records.length ? <EmptyState icon={<Search />} title="No matching analyses" description="Try a different search or filter." action={{ label: 'Clear filters', onClick: clearFilters }} /> : <EmptyState icon={<FileText />} title="Your library is empty" description="Completed analyses appear here for this session." action={{ label: 'Start an analysis', onClick: () => navigate('/new') }} />}</div>
   </PageShell>
 }
