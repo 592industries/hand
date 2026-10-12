@@ -134,7 +134,7 @@ Pushes to `main` start the GitHub Actions workflow. It installs dependencies and
 See [Limitations and Tradeoffs](docs/11-limitations-and-tradeoffs.md).
 
 ## Releases
-
+- v2.2.0 — progress-aware background analysis, live processing-stage updates, resilient status polling, editable transcription review, consolidated reference metrics, and a focused document-review workspace; implementation commit `6fde22bb`.
 - v2.2.1 — upload normalization, actual image-header validation, collapsed findings, transcription typography, and race-safe session cleanup; implementation commit `605adbcb`.
 - v2.2.0 — progress-aware background analysis and the focused document-review workspace; implementation commit `6fde22bb`.
 - v2.1.0 — blue brand integration, public policies, and privacy/security documentation; implementation commit `7050b917`.
