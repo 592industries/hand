@@ -134,9 +134,9 @@ Pushes to `main` start the GitHub Actions workflow. It installs dependencies and
 See [Limitations and Tradeoffs](docs/11-limitations-and-tradeoffs.md).
 
 ## Releases
-- v2.2.2 — Improved mobile reliability with Safari-compatible startup, immediate branded loading feedback, optimized initial bundle loading, resilient session reconnection, and small-screen safe-area support; builds on the upload normalization, image validation, and session cleanup improvements introduced in v2.2.1.
-- v2.2.1 — upload normalization, actual image-header validation, collapsed findings, transcription typography, and race-safe session cleanup; implementation commit `605adbcb`.
-- v2.2.0 — progress-aware background analysis and the focused document-review workspace; implementation commit `6fde22bb`.
+- [v2.2.2](https://github.com/592industries/hand/releases/tag/v2.2.2) — Improved mobile reliability with Safari-compatible startup, immediate branded loading feedback, optimized initial bundle loading, resilient session reconnection, and small-screen safe-area support; builds on the upload normalization, image validation, and session cleanup improvements introduced in v2.2.1.
+- [v2.2.1](https://github.com/592industries/hand/releases/tag/v2.2.1) — upload normalization, actual image-header validation, collapsed findings, transcription typography, and race-safe session cleanup; implementation commit `605adbcb`.
+- [v2.2.0](https://github.com/592industries/hand/releases/tag/v2.2.0) — progress-aware background analysis and the focused document-review workspace; implementation commit `6fde22bb`.
 - v2.1.0 — blue brand integration, public policies, and privacy/security documentation; implementation commit `7050b917`.
 - [v2.0.0](https://github.com/592industries/hand/releases/tag/v2.0.0) — interface redesign and account-free workspace refinement.
 - [v1.0.0](https://github.com/592industries/hand/releases/tag/v1.0.0) — optimized H.A.N.D brand assets.
